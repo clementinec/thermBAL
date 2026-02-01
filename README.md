@@ -60,6 +60,16 @@ m_wm2 = 1.2 * MET_TO_WM2
 
 The solver also provides a derived `met_equiv` value in `result.inputs` and the trace for QA checks.
 
+## Sanity check (typical baseline)
+
+At Ta = Tr = 25 C, RH = 50%, v = 0.1 m/s, and M = 58.15 W/m^2 (1 met), PMV depends strongly on clothing. This implementation yields approximately:
+
+- `clo = 0.0` -> PMV ~ -2.32
+- `clo = 0.5` -> PMV ~ -0.40
+- `clo = 0.7` -> PMV ~ 0.01
+
+Use this as a quick check that units and clothing inputs are sensible.
+
 ## Trace and diagnostics
 
 ```python

@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Thermal Balance Explorer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
@@ -331,13 +334,22 @@
     .trace {
       font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
       font-size: 12px;
-      white-space: pre-wrap;
+      white-space: normal;
       background: #fff;
       border-radius: 12px;
       border: 1px solid var(--border);
       padding: 12px;
       max-height: 280px;
       overflow: auto;
+      line-height: 1.6;
+    }
+
+    .eq-line {
+      margin-bottom: 6px;
+    }
+
+    .eq-line:last-child {
+      margin-bottom: 0;
     }
 
     .btn {
@@ -961,24 +973,31 @@
         }
       };
 
-      const traceText = [
-        `Icl = clo * 0.155 = ${fmt(loss.Icl, 3)} m²K/W`,
-        `f_cl = ${fmt(loss.f_cl, 3)} (piecewise)`,
-        `p_ws(Ta) = ${fmt(loss.p_ws, 1)} Pa`,
-        `p_a = RH * p_ws = ${fmt(loss.p_a, 1)} Pa`,
-        `Tcl iteration: ${loss.solver.converged ? 'converged' : 'not converged'} in ${loss.solver.iterations} iters (res ${fmt(loss.solver.residual, 5)})`,
-        `h_forced = ${fmt(loss.h_forced, 2)} · h_natural = ${fmt(loss.h_natural, 2)} · h_c = ${fmt(loss.h_c, 2)} W/m²K`,
-        `Q_rad = 3.96e-8 * f_cl * (Tcl_K^4 - Tr_K^4) = ${fmt(loss.Q_rad, 2)} W/m²`,
-        `Q_conv = f_cl * h_c * (Tcl - Ta) = ${fmt(loss.Q_conv, 2)} W/m²`,
-        `h_r (${loss.branches.hrMethod}) = ${fmt(loss.hr, 2)} W/m²K · dTa/dTr(dry) = ${fmt(loss.eqSlope, 2)}`,
-        `E_diff = 3.05e-3 * (5733 - 6.99*H - p_a) = ${fmt(loss.E_diff, 2)} W/m²`,
-        `E_sw = max(0, 0.42*(H - 58.15)) [1 met] = ${fmt(loss.E_sw, 2)} W/m²`,
-        `E_res = 1.7e-5 * M * (5867 - p_a) = ${fmt(loss.E_res, 2)} W/m²`,
-        `C_res = 0.0014 * M * (34 - Ta) = ${fmt(loss.C_res, 2)} W/m²`,
-        `PMV factor = ${fmt(loss.pmvFactor, 4)}`,
-        `Balance H - L = ${fmt(balance, 2)} W/m²`
-      ].join('\\n');
-      el('traceText').textContent = traceText;
+      const traceLines = [
+        `I_{cl} = clo \\times 0.155 = ${fmt(loss.Icl, 3)}\\,\\mathrm{m^2K/W}`,
+        `f_{cl} = ${fmt(loss.f_cl, 3)}\\ \\text{(piecewise)}`,
+        `p_{ws}(T_a) = ${fmt(loss.p_ws, 1)}\\,\\mathrm{Pa}`,
+        `p_a = RH\\times p_{ws} = ${fmt(loss.p_a, 1)}\\,\\mathrm{Pa}`,
+        `T_{cl}\\ \\text{iteration: } ${loss.solver.converged ? '\\\\text{converged}' : '\\\\text{not converged}'}\\ \\text{in } ${loss.solver.iterations}\\ \\text{iters (res } ${fmt(loss.solver.residual, 5)}\\text{)}`,
+        `h_{forced} = ${fmt(loss.h_forced, 2)}\\,\\mathrm{W/m^2K},\\quad h_{natural} = ${fmt(loss.h_natural, 2)}\\,\\mathrm{W/m^2K},\\quad h_c = ${fmt(loss.h_c, 2)}\\,\\mathrm{W/m^2K}`,
+        `Q_{rad} = 3.96\\times 10^{-8} f_{cl}(T_{cl,K}^4 - T_{r,K}^4) = ${fmt(loss.Q_rad, 2)}\\,\\mathrm{W/m^2}`,
+        `Q_{conv} = f_{cl} h_c (T_{cl} - T_a) = ${fmt(loss.Q_conv, 2)}\\,\\mathrm{W/m^2}`,
+        `h_r\\,(${loss.branches.hrMethod}) = ${fmt(loss.hr, 2)}\\,\\mathrm{W/m^2K},\\quad \\frac{dT_a}{dT_r}(dry) = ${fmt(loss.eqSlope, 2)}`,
+        `E_{diff} = 3.05\\times 10^{-3}(5733 - 6.99H - p_a) = ${fmt(loss.E_diff, 2)}\\,\\mathrm{W/m^2}`,
+        `E_{sw} = \\max(0, 0.42(H - 58.15))\\ [1\\ \\text{met}] = ${fmt(loss.E_sw, 2)}\\,\\mathrm{W/m^2}`,
+        `E_{res} = 1.7\\times 10^{-5} M (5867 - p_a) = ${fmt(loss.E_res, 2)}\\,\\mathrm{W/m^2}`,
+        `C_{res} = 0.0014 M (34 - T_a) = ${fmt(loss.C_res, 2)}\\,\\mathrm{W/m^2}`,
+        `PMV\\ \\text{factor} = ${fmt(loss.pmvFactor, 4)}`,
+        `H - L = ${fmt(balance, 2)}\\,\\mathrm{W/m^2}`
+      ];
+      const traceEl = el('traceText');
+      traceEl.innerHTML = traceLines.map(line => `<div class=\"eq-line\">\\\\(${line}\\\\)</div>`).join('');
+      if (window.renderMathInElement) {
+        renderMathInElement(traceEl, {
+          delimiters: [{ left: '\\\\(', right: '\\\\)', display: false }],
+          throwOnError: false
+        });
+      }
 
       el('copyTrace').onclick = async () => {
         try {
