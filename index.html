@@ -443,9 +443,9 @@
           <label for="metMode">Met input mode</label>
           <select id="metMode">
             <option value="estimated">Estimated from profile (BMR → RMR × activity)</option>
-            <option value="manual">Manual met (ISO activity input)</option>
+            <option value="manual">Manual metabolic rate (W/m²)</option>
           </select>
-          <div class="hint">Profile estimator is exploratory and not the ISO-standard PMV input.</div>
+          <div class="hint">Profile estimator is exploratory; PMV consumes M in W/m².</div>
         </div>
 
         <div id="metEstimatedBlock">
@@ -468,19 +468,20 @@
 
         <div id="metManualBlock" style="display:none;">
           <div class="control">
-            <label for="metPreset">Manual met (activity)</label>
+            <label for="metPreset">Manual metabolic rate presets</label>
             <select id="metPreset">
-              <option value="0.8">Resting (0.8)</option>
-              <option value="1.0">Seated (1.0)</option>
-              <option value="1.2">Standing (1.2)</option>
-              <option value="1.6">Walking light (1.6)</option>
-              <option value="2.0">Walking brisk (2.0)</option>
+              <option value="46.52">Resting (0.8 met / 46.52 W/m²)</option>
+              <option value="58.15">Seated (1.0 met / 58.15 W/m²)</option>
+              <option value="69.78">Standing (1.2 met / 69.78 W/m²)</option>
+              <option value="93.04">Walking light (1.6 met / 93.04 W/m²)</option>
+              <option value="116.3">Walking brisk (2.0 met / 116.3 W/m²)</option>
               <option value="custom">Custom</option>
             </select>
             <div class="input-row" style="margin-top:8px;">
-              <input id="metRange" type="range" min="0.7" max="3" step="0.05" />
-              <input id="metManual" type="number" min="0.7" max="3" step="0.05" />
+              <input id="metRange" type="range" min="40" max="200" step="0.01" />
+              <input id="metManual" type="number" min="40" max="200" step="0.01" />
             </div>
+            <div class="hint">1 met = 58.15 W/m².</div>
           </div>
         </div>
 
@@ -515,7 +516,7 @@
                 <div class="value mono" id="mActive">—</div>
               </div>
               <div class="stat">
-                <div class="label" id="metActiveLabel">Active Met</div>
+                <div class="label" id="metActiveLabel">Active met (derived)</div>
                 <div class="value mono" id="metActive">—</div>
               </div>
               <div class="stat">
@@ -647,7 +648,8 @@
       estimateMetabolicProfile,
       computePMV,
       dewPointFromRh,
-      humidityRatio
+      humidityRatio,
+      wm2ToMet
     } from './comfort-engine.js';
     const defaults = {
       Ta: 24,
@@ -662,7 +664,7 @@
       rmr: 1.1,
       activity: 1.2,
       metMode: 'estimated',
-      metManual: 1.2
+      metManual: 69.78
     };
 
     const el = (id) => document.getElementById(id);
@@ -749,20 +751,20 @@
         activityMultiplier: occ.activity
       });
       const metMode = el('metMode').value;
-      const manualMetRaw = parseFloat(el('metManual').value);
-      const manualMet = Number.isFinite(manualMetRaw) ? manualMetRaw : defaults.metManual;
-      const activeMet = metMode === 'manual' ? manualMet : metabolic.met_active;
+      const manualMRaw = parseFloat(el('metManual').value);
+      const manualM = Number.isFinite(manualMRaw) ? manualMRaw : defaults.metManual;
+      const activeM = metMode === 'manual' ? manualM : metabolic.M_active;
+      const activeMet = wm2ToMet(activeM);
       const loss = computePMV(env, {
         clo: occ.clo,
-        met: activeMet,
+        m_wm2: activeM,
         wme: 0
       });
-      const activeM = loss.M;
 
       el('pmv').textContent = fmt(loss.PMV, 2);
       el('ppd').textContent = fmt(loss.PPD, 1);
       el('mActiveLabel').textContent = metMode === 'manual' ? 'Active M (manual)' : 'Active M (estimated)';
-      el('metActiveLabel').textContent = metMode === 'manual' ? 'Manual met' : 'Active Met';
+      el('metActiveLabel').textContent = 'Active met (derived)';
       el('mActive').textContent = `${fmt(activeM, 1)} W/m²`;
       el('metActive').textContent = fmt(activeMet, 2);
       el('mProfile').textContent = `${fmt(metabolic.M_rmr, 1)} W/m²`;
@@ -911,7 +913,8 @@
           v_ms: env.v,
           clo: occ.clo,
           met_mode: metMode,
-          met_active: activeMet
+          M_active_Wm2: activeM,
+          met_equiv: activeMet
         },
         metabolic: {
           BMR_kcal_day: metabolic.BMR,
@@ -969,7 +972,7 @@
         `Q_conv = f_cl * h_c * (Tcl - Ta) = ${fmt(loss.Q_conv, 2)} W/m²`,
         `h_r (${loss.branches.hrMethod}) = ${fmt(loss.hr, 2)} W/m²K · dTa/dTr(dry) = ${fmt(loss.eqSlope, 2)}`,
         `E_diff = 3.05e-3 * (5733 - 6.99*H - p_a) = ${fmt(loss.E_diff, 2)} W/m²`,
-        `E_sw = max(0, 0.42*(H - 58.15)) = ${fmt(loss.E_sw, 2)} W/m²`,
+        `E_sw = max(0, 0.42*(H - 58.15)) [1 met] = ${fmt(loss.E_sw, 2)} W/m²`,
         `E_res = 1.7e-5 * M * (5867 - p_a) = ${fmt(loss.E_res, 2)} W/m²`,
         `C_res = 0.0014 * M * (34 - Ta) = ${fmt(loss.C_res, 2)} W/m²`,
         `PMV factor = ${fmt(loss.pmvFactor, 4)}`,

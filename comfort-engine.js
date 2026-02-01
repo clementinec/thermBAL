@@ -5,6 +5,7 @@ export const EPSILON = 0.95;
 export const F_EFF = 0.72;
 
 export const metToWm2 = (met) => met * MET_TO_WM2;
+export const wm2ToMet = (mWm2) => mWm2 / MET_TO_WM2;
 
 export const mifflinBMR = ({ sex, weightKg, heightCm, age }) => {
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
@@ -59,11 +60,15 @@ export const computePMV = (env, occ) => {
   const v = Number.isFinite(env.v) ? env.v : 0;
   const patm = env.patm ?? 101325;
 
-  const met = occ.met;
+  const m_wm2 = occ.m_wm2;
   const clo = occ.clo;
   const wme = occ.wme ?? 0;
 
-  const M = metToWm2(met);
+  if (!Number.isFinite(m_wm2)) {
+    throw new Error('computePMV expects occ.m_wm2 in W/m².');
+  }
+
+  const M = m_wm2;
   const H = M - wme;
 
   const Icl = clo * CLO_TO_ICL;
@@ -110,7 +115,7 @@ export const computePMV = (env, occ) => {
   const Q_conv = f_cl * h_c * (Tcl - Ta);
 
   const E_diff = 3.05e-3 * (5733 - 6.99 * H - p_a);
-  const E_sw = Math.max(0, 0.42 * (H - 58.15));
+  const E_sw = Math.max(0, 0.42 * (H - MET_TO_WM2));
   const E_res = 1.7e-5 * M * (5867 - p_a);
   const C_res = 0.0014 * M * (34 - Ta);
 
