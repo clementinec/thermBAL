@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thermal Balance Explorer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+    :root {
+      --bg: #f7f2ea;
+      --bg2: #e6f2ef;
+      --ink: #1c1a18;
+      --muted: #5b5651;
+      --card: #ffffff;
+      --accent-1: #e76f51;
+      --accent-2: #f4a261;
+      --accent-3: #2a9d8f;
+      --accent-4: #264653;
+      --accent-5: #f2c14e;
+      --border: #e4ddd4;
+      --shadow: 0 14px 30px rgba(28, 26, 24, 0.12);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 700px at 10% -10%, #fff7ec 0%, transparent 60%),
+        radial-gradient(900px 700px at 90% 0%, #e8f5ff 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 28px;
+      animation: rise 0.7s ease-out both;
+    }
+
+    .hero h1 {
+      font-size: clamp(28px, 3vw, 44px);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+      font-size: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: 22px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      animation: rise 0.8s ease-out both;
+    }
+
+    .panel + .panel {
+      animation-delay: 0.05s;
+    }
+
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin: 4px 0 14px;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .control label {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .control .hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 90px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-4);
+    }
+
+    details {
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+      margin-top: 8px;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .output-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .card {
+      background: #fdfbf7;
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid #efe7dc;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 12px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .stat .label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat .value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .mono {
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      letter-spacing: -0.01em;
+    }
+
+    .stack {
+      display: flex;
+      width: 100%;
+      height: 30px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #f1eee8;
+    }
+
+    .seg {
+      height: 100%;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+    }
+
+    .bar {
+      margin-top: 10px;
+      position: relative;
+      height: 24px;
+      border-radius: 999px;
+      background: #f1eee8;
+      overflow: hidden;
+    }
+
+    .bar .fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: linear-gradient(90deg, #2a9d8f, #f4a261);
+      transition: width 0.3s ease;
+    }
+
+    .bar .label {
+      position: relative;
+      z-index: 1;
+      font-size: 12px;
+      padding: 4px 10px;
+      color: #1c1a18;
+      font-weight: 600;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .table th, .table td {
+      text-align: left;
+      padding: 6px 4px;
+      border-bottom: 1px solid #efe7dc;
+    }
+
+    .caption {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .gain {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #8b4a2f;
+      background: #fff1e6;
+      border-radius: 10px;
+      padding: 8px 10px;
+      border: 1px solid #f2d5c6;
+    }
+
+    .regime {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #1f4f66;
+      background: #e9f4fb;
+      border-radius: 10px;
+      padding: 8px 10px;
+      border: 1px solid #cfe6f3;
+    }
+
+    .validity {
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #4a3a00;
+      background: #fff4d6;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid #f2dea6;
+    }
+
+    .signed-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 12px;
+    }
+
+    .signed-row {
+      display: grid;
+      grid-template-columns: 70px 1fr 70px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .signed-bar {
+      position: relative;
+      height: 12px;
+      background: #f1eee8;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .signed-zero {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #c8c0b7;
+    }
+
+    .signed-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+    }
+
+    .trace {
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    .btn {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <h1>Thermal Balance Explorer</h1>
+      <p>Turn the knobs and see how convection, radiation, evaporation, and respiration partition the heat loss — alongside metabolic heat generation.</p>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="section-title">Environment</div>
+
+        <div class="control">
+          <label for="ta">Air temperature Ta (°C)</label>
+          <div class="input-row">
+            <input id="taRange" type="range" min="10" max="35" step="0.1" />
+            <input id="ta" type="number" min="10" max="35" step="0.1" />
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="tr">Mean radiant temperature MRT/Tr (°C)</label>
+          <div class="input-row">
+            <input id="trRange" type="range" min="10" max="35" step="0.1" />
+            <input id="tr" type="number" min="10" max="35" step="0.1" />
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="rh">Relative humidity RH (%)</label>
+          <div class="input-row">
+            <input id="rhRange" type="range" min="0" max="100" step="1" />
+            <input id="rh" type="number" min="0" max="100" step="1" />
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="v">Air speed v (m/s)</label>
+          <div class="input-row">
+            <input id="vRange" type="range" min="0" max="2" step="0.01" />
+            <input id="v" type="number" min="0" max="2" step="0.01" />
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:20px;">Occupant</div>
+
+        <div class="control">
+          <label for="clo">Clothing (clo)</label>
+          <div class="input-row">
+            <input id="cloRange" type="range" min="0" max="3" step="0.05" />
+            <input id="clo" type="number" min="0" max="3" step="0.05" />
+          </div>
+        </div>
+
+        <div class="control">
+          <label for="sex">Sex</label>
+          <select id="sex">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="age">Age (years)</label>
+          <input id="age" type="number" min="10" max="100" step="1" />
+        </div>
+
+        <div class="control">
+          <label for="height">Height (cm)</label>
+          <input id="height" type="number" min="120" max="210" step="1" />
+        </div>
+
+        <div class="control">
+          <label for="weight">Weight (kg)</label>
+          <input id="weight" type="number" min="35" max="150" step="0.5" />
+        </div>
+
+        <div class="control">
+          <label for="metMode">Met input mode</label>
+          <select id="metMode">
+            <option value="estimated">Estimated from profile (BMR → RMR × activity)</option>
+            <option value="manual">Manual met (ISO activity input)</option>
+          </select>
+          <div class="hint">Profile estimator is exploratory and not the ISO-standard PMV input.</div>
+        </div>
+
+        <div id="metEstimatedBlock">
+          <div class="control">
+            <label for="activity">Activity level (PAL; multiplier on RMR)</label>
+            <select id="activity">
+              <option value="1.2">Sedentary (1.20)</option>
+              <option value="1.375">Light (1.375)</option>
+              <option value="1.55">Moderate (1.55)</option>
+              <option value="1.725">Very active (1.725)</option>
+              <option value="1.9">Athlete (1.90)</option>
+              <option value="custom">Custom</option>
+            </select>
+            <div class="input-row" style="margin-top:8px;">
+              <span class="hint">Multiplier</span>
+              <input id="activityMult" type="number" min="1" max="3" step="0.01" />
+            </div>
+          </div>
+        </div>
+
+        <div id="metManualBlock" style="display:none;">
+          <div class="control">
+            <label for="metPreset">Manual met (activity)</label>
+            <select id="metPreset">
+              <option value="0.8">Resting (0.8)</option>
+              <option value="1.0">Seated (1.0)</option>
+              <option value="1.2">Standing (1.2)</option>
+              <option value="1.6">Walking light (1.6)</option>
+              <option value="2.0">Walking brisk (2.0)</option>
+              <option value="custom">Custom</option>
+            </select>
+            <div class="input-row" style="margin-top:8px;">
+              <input id="metRange" type="range" min="0.7" max="3" step="0.05" />
+              <input id="metManual" type="number" min="0.7" max="3" step="0.05" />
+            </div>
+          </div>
+        </div>
+
+        <details>
+          <summary>Advanced metabolic settings</summary>
+          <div class="control" style="margin-top:10px;">
+            <label for="rmr">RMR factor</label>
+            <div class="input-row">
+              <span class="hint">Default 1.10</span>
+              <input id="rmr" type="number" min="1" max="1.3" step="0.01" />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel">
+        <div class="output-grid">
+          <div class="card">
+            <div class="section-title">Key outputs</div>
+            <div class="validity" id="validityBanner" style="display:none;"></div>
+            <div class="stats">
+              <div class="stat">
+                <div class="label">PMV</div>
+                <div class="value mono" id="pmv">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">PPD (%)</div>
+                <div class="value mono" id="ppd">—</div>
+              </div>
+              <div class="stat">
+                <div class="label" id="mActiveLabel">Active M (W/m²)</div>
+                <div class="value mono" id="mActive">—</div>
+              </div>
+              <div class="stat">
+                <div class="label" id="metActiveLabel">Active Met</div>
+                <div class="value mono" id="metActive">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Profile M (RMR)</div>
+                <div class="value mono" id="mProfile">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">BSA (m²)</div>
+                <div class="value mono" id="bsa">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Net balance (H − L)</div>
+                <div class="value mono" id="balance">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Dew point (°C)</div>
+                <div class="value mono" id="dewPoint">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Humidity ratio (kg/kg)</div>
+                <div class="value mono" id="humRatio">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Eq slope dTa/dTr</div>
+                <div class="value mono" id="eqSlope">—</div>
+              </div>
+              <div class="stat">
+                <div class="label">Dry dominance</div>
+                <div class="value mono" id="dominance">—</div>
+              </div>
+            </div>
+            <div style="margin-top:16px;">
+              <div class="section-title" style="margin-bottom:8px;">Metabolic heat generation</div>
+              <div class="bar">
+                <div class="fill" id="metBar"></div>
+                <div class="label" id="metLabel">—</div>
+              </div>
+              <div class="caption">Bar shows active metabolic heat (M). Profile M is RMR-only and independent of activity.</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Heat-loss breakdown</div>
+            <div class="caption" style="margin-bottom:8px;">Loss-only shares (positive heat losses only).</div>
+            <div class="stack" id="lossStack">
+              <div class="seg" id="segConv" style="background: var(--accent-1);"></div>
+              <div class="seg" id="segRad" style="background: var(--accent-2);"></div>
+              <div class="seg" id="segEvap" style="background: var(--accent-3);"></div>
+              <div class="seg" id="segRes" style="background: var(--accent-4);"></div>
+            </div>
+            <div class="legend">
+              <div class="legend-item"><span class="dot" style="background: var(--accent-1);"></span>Conv <span class="mono" id="pctConv">—</span></div>
+              <div class="legend-item"><span class="dot" style="background: var(--accent-2);"></span>Rad <span class="mono" id="pctRad">—</span></div>
+              <div class="legend-item"><span class="dot" style="background: var(--accent-3);"></span>Evap <span class="mono" id="pctEvap">—</span></div>
+              <div class="legend-item"><span class="dot" style="background: var(--accent-4);"></span>Resp <span class="mono" id="pctRes">—</span></div>
+            </div>
+            <div class="gain" id="gainNote" style="display:none;"></div>
+
+            <div class="caption" style="margin:14px 0 8px;">Magnitude shares (absolute values).</div>
+            <div class="stack" id="magStack">
+              <div class="seg" id="magConv" style="background: var(--accent-1);"></div>
+              <div class="seg" id="magRad" style="background: var(--accent-2);"></div>
+              <div class="seg" id="magEvap" style="background: var(--accent-3);"></div>
+              <div class="seg" id="magRes" style="background: var(--accent-4);"></div>
+            </div>
+            <div class="legend">
+              <div class="legend-item"><span class="dot" style="background: var(--accent-1);"></span>Conv <span class="mono" id="pctConvMag">—</span></div>
+              <div class="legend-item"><span class="dot" style="background: var(--accent-2);"></span>Rad <span class="mono" id="pctRadMag">—</span></div>
+              <div class="legend-item"><span class="dot" style="background: var(--accent-3);"></span>Evap <span class="mono" id="pctEvapMag">—</span></div>
+              <div class="legend-item"><span class="dot" style="background: var(--accent-4);"></span>Resp <span class="mono" id="pctResMag">—</span></div>
+            </div>
+
+            <div class="caption" style="margin:14px 0 8px;">Signed contributions (right = loss, left = gain).</div>
+            <div class="signed-list">
+              <div class="signed-row">
+                <div>Conv</div>
+                <div class="signed-bar"><span class="signed-zero"></span><span class="signed-fill" id="signedConv" style="background: var(--accent-1);"></span></div>
+                <div class="mono" id="signedConvVal">—</div>
+              </div>
+              <div class="signed-row">
+                <div>Rad</div>
+                <div class="signed-bar"><span class="signed-zero"></span><span class="signed-fill" id="signedRad" style="background: var(--accent-2);"></span></div>
+                <div class="mono" id="signedRadVal">—</div>
+              </div>
+              <div class="signed-row">
+                <div>Evap</div>
+                <div class="signed-bar"><span class="signed-zero"></span><span class="signed-fill" id="signedEvap" style="background: var(--accent-3);"></span></div>
+                <div class="mono" id="signedEvapVal">—</div>
+              </div>
+              <div class="signed-row">
+                <div>Resp</div>
+                <div class="signed-bar"><span class="signed-zero"></span><span class="signed-fill" id="signedRes" style="background: var(--accent-4);"></span></div>
+                <div class="mono" id="signedResVal">—</div>
+              </div>
+            </div>
+
+            <div class="regime" id="regimeNote"></div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Component values (W/m² and W)</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>W/m²</th>
+                  <th>W</th>
+                </tr>
+              </thead>
+              <tbody id="componentTable"></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Model trace</div>
+            <details>
+              <summary>Show governing equations and branches</summary>
+              <div class="trace" id="traceText"></div>
+              <button class="btn" id="copyTrace" type="button">Copy JSON trace</button>
+            </details>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      estimateMetabolicProfile,
+      computePMV,
+      dewPointFromRh,
+      humidityRatio
+    } from './comfort-engine.js';
+    const defaults = {
+      Ta: 24,
+      Tr: 24,
+      RH: 50,
+      v: 0.1,
+      clo: 0.7,
+      sex: 'male',
+      age: 30,
+      height: 175,
+      weight: 70,
+      rmr: 1.1,
+      activity: 1.2,
+      metMode: 'estimated',
+      metManual: 1.2
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    const bindRange = (rangeId, numberId) => {
+      const range = el(rangeId);
+      const number = el(numberId);
+      const sync = (value) => {
+        range.value = value;
+        number.value = value;
+      };
+      range.addEventListener('input', () => {
+        number.value = range.value;
+        update();
+      });
+      number.addEventListener('input', () => {
+        range.value = number.value;
+        update();
+      });
+      sync(range.value);
+    };
+
+    const presetMatches = (value, selectId) => {
+      const presets = Array.from(el(selectId).options)
+        .filter(opt => opt.value !== 'custom')
+        .map(opt => parseFloat(opt.value));
+      const match = presets.find(v => Math.abs(v - value) < 0.001);
+      return match ? String(match) : null;
+    };
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    const fmt = (value, digits = 1) => Number.isFinite(value) ? value.toFixed(digits) : '—';
+
+    const setDefaults = () => {
+      el('taRange').value = defaults.Ta;
+      el('ta').value = defaults.Ta;
+      el('trRange').value = defaults.Tr;
+      el('tr').value = defaults.Tr;
+      el('rhRange').value = defaults.RH;
+      el('rh').value = defaults.RH;
+      el('vRange').value = defaults.v;
+      el('v').value = defaults.v;
+      el('cloRange').value = defaults.clo;
+      el('clo').value = defaults.clo;
+      el('sex').value = defaults.sex;
+      el('age').value = defaults.age;
+      el('height').value = defaults.height;
+      el('weight').value = defaults.weight;
+      el('rmr').value = defaults.rmr;
+      el('activityMult').value = defaults.activity;
+      el('activity').value = String(defaults.activity);
+      el('metMode').value = defaults.metMode;
+      el('metRange').value = defaults.metManual;
+      el('metManual').value = defaults.metManual;
+      const metMatch = presetMatches(defaults.metManual, 'metPreset');
+      el('metPreset').value = metMatch ? metMatch : 'custom';
+    };
+
+    const update = () => {
+      const env = {
+        Ta: parseFloat(el('ta').value),
+        Tr: parseFloat(el('tr').value),
+        RH: parseFloat(el('rh').value),
+        v: parseFloat(el('v').value)
+      };
+
+      const occ = {
+        clo: parseFloat(el('clo').value),
+        sex: el('sex').value,
+        age: parseFloat(el('age').value),
+        height: parseFloat(el('height').value),
+        weight: parseFloat(el('weight').value),
+        rmr: parseFloat(el('rmr').value),
+        activity: parseFloat(el('activityMult').value)
+      };
+
+      const metabolic = estimateMetabolicProfile({
+        sex: occ.sex,
+        weightKg: occ.weight,
+        heightCm: occ.height,
+        age: occ.age,
+        rmrFactor: occ.rmr,
+        activityMultiplier: occ.activity
+      });
+      const metMode = el('metMode').value;
+      const manualMetRaw = parseFloat(el('metManual').value);
+      const manualMet = Number.isFinite(manualMetRaw) ? manualMetRaw : defaults.metManual;
+      const activeMet = metMode === 'manual' ? manualMet : metabolic.met_active;
+      const loss = computePMV(env, {
+        clo: occ.clo,
+        met: activeMet,
+        wme: 0
+      });
+      const activeM = loss.M;
+
+      el('pmv').textContent = fmt(loss.PMV, 2);
+      el('ppd').textContent = fmt(loss.PPD, 1);
+      el('mActiveLabel').textContent = metMode === 'manual' ? 'Active M (manual)' : 'Active M (estimated)';
+      el('metActiveLabel').textContent = metMode === 'manual' ? 'Manual met' : 'Active Met';
+      el('mActive').textContent = `${fmt(activeM, 1)} W/m²`;
+      el('metActive').textContent = fmt(activeMet, 2);
+      el('mProfile').textContent = `${fmt(metabolic.M_rmr, 1)} W/m²`;
+      el('bsa').textContent = fmt(metabolic.BSA, 2);
+
+      const balance = loss.H - loss.L;
+      el('balance').textContent = `${fmt(balance, 1)} W/m²`;
+
+      const dp = dewPointFromRh(env.Ta, env.RH);
+      el('dewPoint').textContent = fmt(dp, 1);
+
+      const w = humidityRatio(loss.p_a, loss.patm);
+      el('humRatio').textContent = Number.isFinite(w) ? w.toFixed(4) : '—';
+      el('eqSlope').textContent = Number.isFinite(loss.eqSlope) ? loss.eqSlope.toFixed(2) : '—';
+      el('dominance').textContent = loss.dominance;
+
+      const metBar = el('metBar');
+      const metLabel = el('metLabel');
+      const barMax = 200;
+      const width = clamp((activeM / barMax) * 100, 0, 100);
+      metBar.style.width = `${width}%`;
+      metLabel.textContent = `${fmt(activeM, 1)} W/m² (active)`;
+
+      const terms = [
+        { key: 'conv', label: 'Convection', value: loss.Q_conv, color: 'var(--accent-1)' },
+        { key: 'rad', label: 'Radiation', value: loss.Q_rad, color: 'var(--accent-2)' },
+        { key: 'evap', label: 'Evaporation', value: loss.E_sk, color: 'var(--accent-3)' },
+        { key: 'res', label: 'Respiration', value: loss.Q_res, color: 'var(--accent-4)' }
+      ];
+
+      const lossOnly = terms.map(term => ({ ...term, loss: Math.max(0, term.value) }));
+      const sumLoss = lossOnly.reduce((acc, term) => acc + term.loss, 0);
+
+      const shares = lossOnly.map(term => sumLoss > 0 ? term.loss / sumLoss : 0);
+
+      el('segConv').style.width = `${shares[0] * 100}%`;
+      el('segRad').style.width = `${shares[1] * 100}%`;
+      el('segEvap').style.width = `${shares[2] * 100}%`;
+      el('segRes').style.width = `${shares[3] * 100}%`;
+
+      el('pctConv').textContent = `${fmt(shares[0] * 100, 1)}%`;
+      el('pctRad').textContent = `${fmt(shares[1] * 100, 1)}%`;
+      el('pctEvap').textContent = `${fmt(shares[2] * 100, 1)}%`;
+      el('pctRes').textContent = `${fmt(shares[3] * 100, 1)}%`;
+
+      const magOnly = terms.map(term => ({ ...term, mag: Math.abs(term.value) }));
+      const sumMag = magOnly.reduce((acc, term) => acc + term.mag, 0);
+      const magShares = magOnly.map(term => sumMag > 0 ? term.mag / sumMag : 0);
+
+      el('magConv').style.width = `${magShares[0] * 100}%`;
+      el('magRad').style.width = `${magShares[1] * 100}%`;
+      el('magEvap').style.width = `${magShares[2] * 100}%`;
+      el('magRes').style.width = `${magShares[3] * 100}%`;
+
+      el('pctConvMag').textContent = `${fmt(magShares[0] * 100, 1)}%`;
+      el('pctRadMag').textContent = `${fmt(magShares[1] * 100, 1)}%`;
+      el('pctEvapMag').textContent = `${fmt(magShares[2] * 100, 1)}%`;
+      el('pctResMag').textContent = `${fmt(magShares[3] * 100, 1)}%`;
+
+      const maxMag = Math.max(...magOnly.map(term => term.mag), 0.0001);
+      const setSignedBar = (barId, value, valueId) => {
+        const bar = el(barId);
+        const pct = Math.min(Math.abs(value) / maxMag, 1) * 50;
+        bar.style.width = `${pct}%`;
+        if (value >= 0) {
+          bar.style.left = '50%';
+          bar.style.right = 'auto';
+        } else {
+          bar.style.left = 'auto';
+          bar.style.right = '50%';
+        }
+        el(valueId).textContent = `${fmt(value, 1)}`;
+      };
+
+      setSignedBar('signedConv', loss.Q_conv, 'signedConvVal');
+      setSignedBar('signedRad', loss.Q_rad, 'signedRadVal');
+      setSignedBar('signedEvap', loss.E_sk, 'signedEvapVal');
+      setSignedBar('signedRes', loss.Q_res, 'signedResVal');
+
+      const gains = terms.filter(term => term.value < 0);
+      const gainNote = el('gainNote');
+      if (gains.length) {
+        const parts = gains.map(term => `${term.label}: ${fmt(term.value, 1)} W/m²`);
+        gainNote.textContent = `Heat gains detected → ${parts.join(' · ')}`;
+        gainNote.style.display = 'block';
+      } else {
+        gainNote.style.display = 'none';
+      }
+
+      const regimeNote = el('regimeNote');
+      if (Number.isFinite(loss.h_forced) && Number.isFinite(loss.h_natural)) {
+        const regime = loss.h_forced >= loss.h_natural ? 'Forced convection' : 'Natural convection';
+        const slopeText = Number.isFinite(loss.eqSlope) ? ` · dTa/dTr(dry) ${loss.eqSlope.toFixed(2)}` : '';
+        regimeNote.textContent = `${regime} regime · h_forced ${fmt(loss.h_forced, 2)} · h_natural ${fmt(loss.h_natural, 2)} W/m²K${slopeText}`;
+      } else {
+        regimeNote.textContent = 'Convection regime: —';
+      }
+
+      const warnings = [];
+      if (env.v > 0.2) warnings.push('Elevated air speed: PMV may be unreliable; consider SET.');
+      if (activeMet < 0.8 || activeMet > 2.0) warnings.push('Met outside typical PMV range (0.8–2.0).');
+      if (occ.clo > 2) warnings.push('High clothing insulation (>2 clo).');
+      if (env.Ta < 10 || env.Ta > 35 || env.Tr < 10 || env.Tr > 35) warnings.push('Air/radiant temperature outside typical PMV bounds.');
+      if (env.RH < 20 || env.RH > 80) warnings.push('Extreme humidity may reduce PMV reliability.');
+      if (!loss.solver.converged) warnings.push(`Tcl solver not converged (residual ${fmt(loss.solver.residual, 4)}).`);
+
+      const validityBanner = el('validityBanner');
+      if (warnings.length) {
+        validityBanner.textContent = warnings.join(' ');
+        validityBanner.style.display = 'block';
+      } else {
+        validityBanner.style.display = 'none';
+      }
+
+      const componentRows = [
+        { name: 'Q_conv', value: loss.Q_conv },
+        { name: 'Q_rad', value: loss.Q_rad },
+        { name: 'E_diff', value: loss.E_diff },
+        { name: 'E_sw', value: loss.E_sw },
+        { name: 'E_res', value: loss.E_res },
+        { name: 'C_res', value: loss.C_res },
+        { name: 'E_sk', value: loss.E_sk },
+        { name: 'Q_res', value: loss.Q_res },
+        { name: 'Total L', value: loss.L }
+      ];
+
+      const tbody = el('componentTable');
+      tbody.innerHTML = '';
+      componentRows.forEach(row => {
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.textContent = row.name;
+        const tdM2 = document.createElement('td');
+        tdM2.textContent = `${fmt(row.value, 1)}`;
+        const tdW = document.createElement('td');
+        tdW.textContent = `${fmt(row.value * metabolic.BSA, 1)}`;
+        tr.append(tdName, tdM2, tdW);
+        tbody.appendChild(tr);
+      });
+
+      const trace = {
+        inputs: {
+          Ta_C: env.Ta,
+          Tr_C: env.Tr,
+          RH_pct: env.RH,
+          v_ms: env.v,
+          clo: occ.clo,
+          met_mode: metMode,
+          met_active: activeMet
+        },
+        metabolic: {
+          BMR_kcal_day: metabolic.BMR,
+          RMR_kcal_day: metabolic.RMR,
+          RMR_factor: occ.rmr,
+          activity_multiplier: occ.activity,
+          BSA_m2: metabolic.BSA,
+          M_active_Wm2: activeM,
+          M_rmr_Wm2: metabolic.M_rmr
+        },
+        derived: {
+          Icl_m2K_W: loss.Icl,
+          f_cl: loss.f_cl,
+          p_ws_Pa: loss.p_ws,
+          p_a_Pa: loss.p_a,
+          Tcl_C: loss.Tcl,
+          h_forced: loss.h_forced,
+          h_natural: loss.h_natural,
+          h_c: loss.h_c,
+          iterations: loss.solver.iterations,
+          residual: loss.solver.residual,
+          converged: loss.solver.converged
+        },
+        branch: {
+          convection_regime: loss.branches.convectionRegime,
+          hr_method: loss.branches.hrMethod
+        },
+        outputs: {
+          Q_conv: loss.Q_conv,
+          Q_rad: loss.Q_rad,
+          E_diff: loss.E_diff,
+          E_sw: loss.E_sw,
+          E_res: loss.E_res,
+          C_res: loss.C_res,
+          E_sk: loss.E_sk,
+          Q_res: loss.Q_res,
+          L_total: loss.L,
+          balance_H_minus_L: balance,
+          PMV_factor: loss.pmvFactor,
+          PMV: loss.PMV,
+          PPD: loss.PPD,
+          eq_slope_dTa_dTr: loss.eqSlope,
+          dominance: loss.dominance
+        }
+      };
+
+      const traceText = [
+        `Icl = clo * 0.155 = ${fmt(loss.Icl, 3)} m²K/W`,
+        `f_cl = ${fmt(loss.f_cl, 3)} (piecewise)`,
+        `p_ws(Ta) = ${fmt(loss.p_ws, 1)} Pa`,
+        `p_a = RH * p_ws = ${fmt(loss.p_a, 1)} Pa`,
+        `Tcl iteration: ${loss.solver.converged ? 'converged' : 'not converged'} in ${loss.solver.iterations} iters (res ${fmt(loss.solver.residual, 5)})`,
+        `h_forced = ${fmt(loss.h_forced, 2)} · h_natural = ${fmt(loss.h_natural, 2)} · h_c = ${fmt(loss.h_c, 2)} W/m²K`,
+        `Q_rad = 3.96e-8 * f_cl * (Tcl_K^4 - Tr_K^4) = ${fmt(loss.Q_rad, 2)} W/m²`,
+        `Q_conv = f_cl * h_c * (Tcl - Ta) = ${fmt(loss.Q_conv, 2)} W/m²`,
+        `h_r (${loss.branches.hrMethod}) = ${fmt(loss.hr, 2)} W/m²K · dTa/dTr(dry) = ${fmt(loss.eqSlope, 2)}`,
+        `E_diff = 3.05e-3 * (5733 - 6.99*H - p_a) = ${fmt(loss.E_diff, 2)} W/m²`,
+        `E_sw = max(0, 0.42*(H - 58.15)) = ${fmt(loss.E_sw, 2)} W/m²`,
+        `E_res = 1.7e-5 * M * (5867 - p_a) = ${fmt(loss.E_res, 2)} W/m²`,
+        `C_res = 0.0014 * M * (34 - Ta) = ${fmt(loss.C_res, 2)} W/m²`,
+        `PMV factor = ${fmt(loss.pmvFactor, 4)}`,
+        `Balance H - L = ${fmt(balance, 2)} W/m²`
+      ].join('\\n');
+      el('traceText').textContent = traceText;
+
+      el('copyTrace').onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(trace, null, 2));
+        } catch (err) {
+          console.error(err);
+        }
+      };
+    };
+
+    const init = () => {
+      setDefaults();
+      bindRange('taRange', 'ta');
+      bindRange('trRange', 'tr');
+      bindRange('rhRange', 'rh');
+      bindRange('vRange', 'v');
+      bindRange('cloRange', 'clo');
+
+      el('sex').addEventListener('change', update);
+      el('age').addEventListener('input', update);
+      el('height').addEventListener('input', update);
+      el('weight').addEventListener('input', update);
+      el('rmr').addEventListener('input', update);
+      el('metMode').addEventListener('change', () => {
+        const mode = el('metMode').value;
+        el('metEstimatedBlock').style.display = mode === 'estimated' ? 'block' : 'none';
+        el('metManualBlock').style.display = mode === 'manual' ? 'block' : 'none';
+        update();
+      });
+
+      el('metPreset').addEventListener('change', () => {
+        const value = el('metPreset').value;
+        if (value !== 'custom') {
+          el('metManual').value = value;
+          el('metRange').value = value;
+        }
+        update();
+      });
+
+      el('metRange').addEventListener('input', () => {
+        const value = parseFloat(el('metRange').value);
+        el('metManual').value = value;
+        const match = presetMatches(value, 'metPreset');
+        el('metPreset').value = match ? match : 'custom';
+        update();
+      });
+
+      el('metManual').addEventListener('input', () => {
+        const value = parseFloat(el('metManual').value);
+        el('metRange').value = value;
+        const match = presetMatches(value, 'metPreset');
+        el('metPreset').value = match ? match : 'custom';
+        update();
+      });
+
+      el('activity').addEventListener('change', () => {
+        const value = el('activity').value;
+        if (value !== 'custom') {
+          el('activityMult').value = value;
+        }
+        update();
+      });
+
+      el('activityMult').addEventListener('input', () => {
+        const value = parseFloat(el('activityMult').value);
+        const match = presetMatches(value, 'activity');
+        el('activity').value = match ? match : 'custom';
+        update();
+      });
+
+      el('metEstimatedBlock').style.display = defaults.metMode === 'estimated' ? 'block' : 'none';
+      el('metManualBlock').style.display = defaults.metMode === 'manual' ? 'block' : 'none';
+      update();
+    };
+
+    init();
+  </script>
+</body>
+</html>
