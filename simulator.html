@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>thermBAL — Floor Plan Comfort Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f6;--fg:#2d2d2d;--border:#d4d0c8;--accent:#8b7355;--panel:#f5f3ee;
+--blue:#4a7fb5;--green:#5a9e6f;--red:#c0392b;--orange:#e67e22;--yellow:#d4ac0d;
+--grid:#e8e4dc;--wall:#2d2d2d;--window-c:#4a7fb5;--door-c:#8b6914;--exit-c:#27ae60}
+body{font-family:"SF Mono","Fira Code","Consolas",monospace;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:12px}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--panel)}
+header h1{font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+header span{font-size:11px;color:var(--accent)}
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:280px;border-right:1px solid var(--border);overflow-y:auto;background:var(--panel);padding:8px;flex-shrink:0}
+.sidebar-r{width:340px;border-left:1px solid var(--border);overflow-y:auto;background:var(--panel);padding:8px;flex-shrink:0}
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.toolbar{display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid var(--border);background:#fff;flex-wrap:wrap;align-items:center}
+.toolbar button{padding:4px 10px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:11px;border-radius:3px}
+.toolbar button.active{background:var(--fg);color:#fff}
+.toolbar button:hover:not(.active){background:#eee}
+.toolbar .sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.canvas-wrap{flex:1;overflow:auto;position:relative;background:#fff}
+canvas#grid{display:block;cursor:crosshair}
+.panel{margin-bottom:8px;border:1px solid var(--border);background:#fff;border-radius:4px}
+.panel-hdr{padding:6px 8px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.panel-body{padding:8px}
+.field{display:flex;align-items:center;margin-bottom:5px;gap:6px}
+.field label{width:85px;font-size:11px;flex-shrink:0}
+.field input[type=range]{flex:1;height:4px}
+.field input[type=number],.field select,.field input[type=text]{width:64px;padding:2px 4px;border:1px solid var(--border);font-family:inherit;font-size:11px;border-radius:2px}
+.field select{width:90px}
+.agent-item{padding:4px 6px;border:1px solid var(--border);border-radius:3px;margin-bottom:4px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.agent-item.sel{border-color:var(--accent);background:#f0ebe3}
+.agent-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-right:6px}
+.btn{padding:4px 10px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:11px;border-radius:3px}
+.btn:hover{background:#eee}
+.btn-a{background:var(--fg);color:#fff;border-color:var(--fg)}
+.btn-a:hover{background:#444}
+.btn-d{color:var(--red);border-color:var(--red)}
+.json-view{font-size:10px;line-height:1.5;background:#1e1e1e;color:#d4d4d4;padding:8px;border-radius:4px;max-height:420px;overflow:auto;white-space:pre;font-family:"SF Mono","Fira Code",monospace}
+.pmv-scale{display:flex;justify-content:space-between;font-size:9px;color:#999;padding:2px 4px 0}
+.status-bar{padding:4px 16px;border-top:1px solid var(--border);background:var(--panel);font-size:10px;display:flex;justify-content:space-between}
+.add-row{display:flex;gap:4px;margin-bottom:6px}
+.add-row select{flex:1;font-family:inherit;font-size:11px;padding:2px 4px;border:1px solid var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<header>
+<h1>thermBAL &mdash; Floor Plan Comfort Simulator</h1>
+<span>Agent-Based Environmental Experience Model v0.2 &middot; HKU Building Informatics Lab</span>
+</header>
+<div class="main">
+<div class="sidebar" id="leftPanel">
+
+<div class="panel"><div class="panel-hdr">Tools</div><div class="panel-body">
+<div style="display:flex;gap:4px;flex-wrap:wrap">
+<button class="toolbar-btn active" data-tool="select">Select</button>
+<button class="toolbar-btn" data-tool="wall">Wall</button>
+<button class="toolbar-btn" data-tool="window">Window</button>
+<button class="toolbar-btn" data-tool="door">Door</button>
+<button class="toolbar-btn" data-tool="exit">Exit</button>
+<button class="toolbar-btn" data-tool="erase">Erase</button>
+</div>
+<div style="margin-top:6px;display:flex;gap:4px">
+<button class="btn" onclick="resetPlan()" style="flex:1">Reset to Default</button>
+<button class="btn btn-d" onclick="clearAll()" style="flex:1">Clear All</button>
+</div>
+</div></div>
+
+<div class="panel" id="roomPanel" style="display:none">
+<div class="panel-hdr">Room: <span id="roomTitle">-</span></div>
+<div class="panel-body" id="roomBody"></div>
+</div>
+
+<div class="panel"><div class="panel-hdr">Agents <span id="agentCount">(0)</span></div><div class="panel-body">
+<div class="add-row">
+<select id="agentTpl"><option value="elder_walker">Elder (Walker)</option><option value="young_visitor">Young Visitor</option><option value="seated_elder">Seated Elder</option><option value="custom">Custom</option></select>
+<button class="btn btn-a" onclick="addAgentFromTpl()">+ Add</button>
+</div>
+<div id="agentList"></div>
+</div></div>
+
+<div class="panel" id="agentPanel" style="display:none">
+<div class="panel-hdr">Agent: <span id="agentTitle">-</span>
+<button class="btn btn-d" onclick="removeSelAgent()" style="padding:2px 8px;font-size:10px">Remove</button>
+</div>
+<div class="panel-body" id="agentBody"></div>
+</div>
+
+</div>
+<div class="center">
+<div class="canvas-wrap" id="canvasWrap"><canvas id="grid"></canvas></div>
+</div>
+<div class="sidebar-r">
+
+<div class="panel"><div class="panel-hdr">Agent JSON Output</div><div class="panel-body">
+<div class="json-view" id="jsonView">Select an agent to see their computed snapshot.</div>
+</div></div>
+
+<div class="panel"><div class="panel-hdr">PMV Distribution</div><div class="panel-body">
+<canvas id="pmvChart" width="308" height="100"></canvas>
+<div class="pmv-scale"><span>-3 Cold</span><span>-2</span><span>-1</span><span>0 Neutral</span><span>+1</span><span>+2</span><span>+3 Hot</span></div>
+</div></div>
+
+<div class="panel"><div class="panel-hdr">PPD Overview</div><div class="panel-body">
+<canvas id="ppdChart" width="308" height="80"></canvas>
+</div></div>
+
+</div>
+</div>
+<div class="status-bar"><span id="statusL">Ready</span><span id="statusR">Grid: 20&times;15 &middot; 1.0 m/cell</span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  COMFORT ENGINE (inlined from comfort-engine.js)
+// ═══════════════════════════════════════════════════════════════
+const MET_TO_WM2 = 58.15, CLO_TO_ICL = 0.155, SIGMA = 5.67e-8, EPSILON = 0.95, F_EFF = 0.72;
+
+function mifflinBMR(sex, wt, ht, age) {
+  const b = 10*wt + 6.25*ht - 5*age;
+  return sex === 'male' ? b+5 : b-161;
+}
+function duBoisBSA(wt, ht) { return 0.007184 * Math.pow(wt,0.425) * Math.pow(ht,0.725); }
+
+function estimateMetabolic(sex, wt, ht, age, actMult) {
+  const bmr = mifflinBMR(sex,wt,ht,age), rmr = bmr*1.1, tee = rmr*actMult;
+  const bsa = Math.max(0.5, duBoisBSA(wt,ht));
+  const mActive = (tee*0.0485)/bsa;
+  return { M_active: mActive, met: mActive/MET_TO_WM2, BSA: bsa };
+}
+
+function satVP(t) { return 610.94 * Math.exp((17.625*t)/(t+243.04)); }
+
+function computePMV(Ta, Tr, RH, v, m_wm2, clo) {
+  const M = m_wm2, H = M, Icl = clo*CLO_TO_ICL;
+  const f_cl = Icl <= 0.078 ? 1+1.29*Icl : 1.05+0.645*Icl;
+  const p_a = (RH/100)*satVP(Ta);
+  const hf = 12.1*Math.sqrt(Math.max(v,0));
+  const taa = Ta+273, tra = Tr+273;
+  const tcla = taa + (35.5-Ta)/(3.5*Icl+0.1);
+  const p1=Icl*f_cl, p2=p1*3.96, p3=p1*100, p4=p1*taa;
+  const p5 = 308.7 - 0.028*H + p2*Math.pow(tra/100,4);
+  let xn=tcla/100, xf=xn, hc=hf;
+  for(let i=0;i<200;i++){
+    xf=(xf+xn)/2;
+    const hn=2.38*Math.pow(Math.abs(100*xf-taa),0.25);
+    hc=Math.max(hf,hn);
+    xn=(p5+p4*hc-p2*Math.pow(xf,4))/(100+p3*hc);
+    if(Math.abs(xn-xf)<=0.00015) break;
+  }
+  const Tcl=100*xn-273;
+  const hn2=2.38*Math.pow(Math.abs(Tcl-Ta),0.25);
+  hc=Math.max(hf,hn2);
+  const TclK=Tcl+273.15, TrK=Tr+273.15;
+  const Qrad=3.96e-8*f_cl*(Math.pow(TclK,4)-Math.pow(TrK,4));
+  const Qconv=f_cl*hc*(Tcl-Ta);
+  const Ediff=3.05e-3*(5733-6.99*H-p_a);
+  const Esw=Math.max(0,0.42*(H-MET_TO_WM2));
+  const Eres=1.7e-5*M*(5867-p_a);
+  const Cres=0.0014*M*(34-Ta);
+  const Esk=Ediff+Esw, Qres=Eres+Cres, L=Qconv+Qrad+Esk+Qres;
+  const pmvF=0.303*Math.exp(-0.036*M)+0.028;
+  const PMV=pmvF*(H-L);
+  const PPD=100-95*Math.exp(-0.03353*Math.pow(PMV,4)-0.2179*Math.pow(PMV,2));
+  return {PMV:+PMV.toFixed(2), PPD:+PPD.toFixed(1), Tcl:+Tcl.toFixed(1),
+    Qconv:+Qconv.toFixed(1), Qrad:+Qrad.toFixed(1), Esk:+Esk.toFixed(1), Qres:+Qres.toFixed(1)};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CONSTANTS & STATE
+// ═══════════════════════════════════════════════════════════════
+const COLS=20, ROWS=15, CELL=32, CELL_M=1.0;
+const ROOM_COLORS = [
+  'rgba(74,127,181,0.12)','rgba(90,158,111,0.12)','rgba(192,57,43,0.10)',
+  'rgba(230,126,34,0.10)','rgba(142,68,173,0.10)','rgba(212,172,13,0.10)',
+  'rgba(52,152,219,0.10)','rgba(46,204,113,0.10)'
+];
+const ACT_MULT = {seated:1.0, standing:1.2, walking:1.6};
+
+// Walls stored on edges: horizontal walls at (col, row) bottom edge, vertical at (col, row) right edge
+// hWalls[row][col] = true means wall on bottom edge of cell(col, row-1) / top of cell(col, row)
+// vWalls[row][col] = true means wall on right edge of cell(col-1, row) / left of cell(col, row)
+let hWalls = []; // (ROWS+1) x COLS
+let vWalls = []; // ROWS x (COLS+1)
+
+// Features on walls: {type:'window'|'door'|'exit', orient:'h'|'v', r, c}
+let wallFeatures = [];
+
+// Rooms: detected via flood fill. [{id, name, cells:Set<'x,y'>, env:{...}, ceilH, colorIdx}]
+let rooms = [];
+
+// Agents: [{id, demo:{age,gender,wt,ht,mobility,hearing,vision}, prefs:{noiseTol,lightPref,socialDen}, clo, activity, pos:[x,y], placedAt}]
+let agents = [];
+let selectedAgent = null;
+let selectedRoom = null;
+let nextAgentNum = 1;
+
+let currentTool = 'select';
+let dragAgent = null;
+let dragOffX = 0, dragOffY = 0;
+
+// ═══════════════════════════════════════════════════════════════
+//  WALL GRID INIT & HELPERS
+// ═══════════════════════════════════════════════════════════════
+function initWalls() {
+  hWalls = Array.from({length:ROWS+1}, ()=>Array(COLS).fill(false));
+  vWalls = Array.from({length:ROWS}, ()=>Array(COLS+1).fill(false));
+  wallFeatures = [];
+  // Border walls
+  for(let c=0;c<COLS;c++) { hWalls[0][c]=true; hWalls[ROWS][c]=true; }
+  for(let r=0;r<ROWS;r++) { vWalls[r][0]=true; vWalls[r][COLS]=true; }
+}
+
+function canMove(x,y) { return x>=0 && x<COLS && y>=0 && y<ROWS; }
+
+function wallBetween(x1,y1,x2,y2) {
+  if(x1===x2) { // vertical move: check hWall
+    const wr = Math.max(y1,y2);
+    return hWalls[wr] && hWalls[wr][x1];
+  }
+  if(y1===y2) { // horizontal move: check vWall
+    const wc = Math.max(x1,x2);
+    return vWalls[y1] && vWalls[y1][wc];
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  FLOOD FILL ROOM DETECTION
+// ═══════════════════════════════════════════════════════════════
+function detectRooms() {
+  const visited = Array.from({length:ROWS}, ()=>Array(COLS).fill(false));
+  const oldRooms = new Map(); // id -> env/name for persistence
+  rooms.forEach(r => oldRooms.set(r.id, {name:r.name, env:{...r.env}, ceilH:r.ceilH}));
+
+  rooms = [];
+  let roomIdx = 0;
+
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) {
+    if(visited[y][x]) continue;
+    // BFS flood fill
+    const cells = new Set();
+    const queue = [[x,y]];
+    visited[y][x] = true;
+    while(queue.length) {
+      const [cx,cy] = queue.shift();
+      cells.add(cx+','+cy);
+      for(const [nx,ny] of [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]) {
+        if(!canMove(nx,ny) || visited[ny][nx]) continue;
+        if(wallBetween(cx,cy,nx,ny)) continue;
+        visited[ny][nx] = true;
+        queue.push([nx,ny]);
+      }
+    }
+    const id = 'room_'+roomIdx;
+    const old = oldRooms.get(id);
+    const defaultEnv = {air_temp:24, mean_radiant_temp:24, humidity:50, air_velocity:0.1, lux:300, noise_db:40};
+    rooms.push({
+      id: id,
+      name: old ? old.name : 'Room '+ String.fromCharCode(65+roomIdx),
+      cells: cells,
+      env: old ? {...old.env} : {...defaultEnv},
+      ceilH: old ? old.ceilH : 2.8,
+      colorIdx: roomIdx % ROOM_COLORS.length
+    });
+    roomIdx++;
+  }
+}
+
+function roomAt(x,y) {
+  const key = x+','+y;
+  return rooms.find(r => r.cells.has(key)) || null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SPATIAL COMPUTATIONS
+// ═══════════════════════════════════════════════════════════════
+function distToWall(x,y,room) {
+  let minD = Infinity;
+  for(const key of room.cells) {
+    const [cx,cy] = key.split(',').map(Number);
+    const nbrs = [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]];
+    const isBoundary = nbrs.some(([nx,ny]) => !room.cells.has(nx+','+ny));
+    if(!isBoundary) continue;
+    if(cx===x && cy===y) return 0.5 * CELL_M;
+    const d = Math.hypot(cx-x, cy-y) * CELL_M;
+    if(d < minD) minD = d;
+  }
+  return +(minD === Infinity ? 0 : minD).toFixed(2);
+}
+
+function featureMidpoint(f) {
+  if(f.orient==='h') return [(f.c+0.5)*CELL_M, f.r*CELL_M];
+  return [f.c*CELL_M, (f.r+0.5)*CELL_M];
+}
+
+function distToFeature(x,y,type) {
+  const cx = (x+0.5)*CELL_M, cy = (y+0.5)*CELL_M;
+  let minD = -1;
+  for(const f of wallFeatures) {
+    if(type==='exit' && f.type!=='exit') continue;
+    if(type==='door' && f.type!=='door' && f.type!=='exit') continue;
+    if(type==='window' && f.type!=='window') continue;
+    const [mx,my] = featureMidpoint(f);
+    const d = Math.hypot(cx-mx, cy-my);
+    if(minD<0 || d<minD) minD = d;
+  }
+  return +(minD).toFixed(2);
+}
+
+function enclosureRatio(x,y,room) {
+  let blocked = 0;
+  for(const [nx,ny] of [[x-1,y],[x+1,y],[x,y-1],[x,y+1]]) {
+    if(!room.cells.has(nx+','+ny)) blocked++;
+  }
+  return +(blocked/4).toFixed(2);
+}
+
+function visibleAgents(agent, room) {
+  let count = 0;
+  const [ax,ay] = agent.pos;
+  for(const a of agents) {
+    if(a.id===agent.id) continue;
+    if(!room.cells.has(a.pos[0]+','+a.pos[1])) continue;
+    if(Math.abs(a.pos[0]-ax)+Math.abs(a.pos[1]-ay) <= 10) count++;
+  }
+  return count;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SNAPSHOT GENERATION
+// ═══════════════════════════════════════════════════════════════
+function agentSnapshot(agent) {
+  const room = roomAt(agent.pos[0], agent.pos[1]);
+  if(!room) return {error:'Agent outside all rooms'};
+
+  const d = agent.demo;
+  const actMult = ACT_MULT[agent.activity] || 1.2;
+  const met = estimateMetabolic(d.gender, d.wt, d.ht, d.age, actMult);
+  const env = room.env;
+  const pmv = computePMV(env.air_temp, env.mean_radiant_temp, env.humidity, env.air_velocity, met.M_active, agent.clo);
+
+  return {
+    agent: { id:agent.id, age:d.age, gender:d.gender, mobility:d.mobility, hearing:d.hearing, vision:d.vision },
+    preferences: { noise_tolerance_db:agent.prefs.noiseTol, light_preference:agent.prefs.lightPref, social_density:agent.prefs.socialDen },
+    position: {
+      coordinates: [...agent.pos],
+      room_id: room.id, room_name: room.name,
+      dist_to_wall: distToWall(agent.pos[0], agent.pos[1], room),
+      dist_to_window: distToFeature(agent.pos[0], agent.pos[1], 'window'),
+      dist_to_exit: distToFeature(agent.pos[0], agent.pos[1], 'exit'),
+      dist_to_door: distToFeature(agent.pos[0], agent.pos[1], 'door'),
+      ceiling_h: room.ceilH,
+      enclosure_ratio: enclosureRatio(agent.pos[0], agent.pos[1], room),
+      visible_agents: visibleAgents(agent, room)
+    },
+    environment: {
+      lux: env.lux, noise_db: env.noise_db,
+      air_temp: env.air_temp, mean_radiant_temp: env.mean_radiant_temp,
+      humidity: env.humidity, air_velocity: env.air_velocity
+    },
+    computed: {
+      pmv: pmv.PMV, ppd: pmv.PPD,
+      metabolic_w_m2: +met.M_active.toFixed(1), met: +met.met.toFixed(2),
+      clothing_temp_c: pmv.Tcl,
+      heat_loss: { convection:pmv.Qconv, radiation:pmv.Qrad, evaporative_skin:pmv.Esk, respiratory:pmv.Qres }
+    },
+    dynamic_state: { duration_mins: +((Date.now()-agent.placedAt)/60000).toFixed(1), activity:agent.activity, clo:agent.clo }
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  AGENT TEMPLATES
+// ═══════════════════════════════════════════════════════════════
+const TEMPLATES = {
+  elder_walker: () => ({
+    demo:{age:78,gender:'female',wt:62,ht:158,mobility:'uses_walker',hearing:'impaired',vision:'mild_impairment'},
+    prefs:{noiseTol:55,lightPref:'bright',socialDen:'low_den'}, clo:0.8, activity:'walking'
+  }),
+  young_visitor: () => ({
+    demo:{age:28,gender:'male',wt:78,ht:178,mobility:'normal',hearing:'normal',vision:'normal'},
+    prefs:{noiseTol:70,lightPref:'moderate',socialDen:'moderate'}, clo:0.6, activity:'standing'
+  }),
+  seated_elder: () => ({
+    demo:{age:85,gender:'male',wt:72,ht:168,mobility:'wheelchair',hearing:'normal',vision:'severe_impairment'},
+    prefs:{noiseTol:50,lightPref:'bright',socialDen:'low_den'}, clo:1.2, activity:'seated'
+  }),
+  custom: () => ({
+    demo:{age:30,gender:'male',wt:70,ht:170,mobility:'normal',hearing:'normal',vision:'normal'},
+    prefs:{noiseTol:60,lightPref:'moderate',socialDen:'moderate'}, clo:0.7, activity:'seated'
+  })
+};
+
+function findEmptyCell() {
+  for(let y=1;y<ROWS-1;y++) for(let x=1;x<COLS-1;x++) {
+    if(!agents.some(a=>a.pos[0]===x&&a.pos[1]===y)) return [x,y];
+  }
+  return [1,1];
+}
+
+function addAgentFromTpl() {
+  const tpl = document.getElementById('agentTpl').value;
+  const t = TEMPLATES[tpl]();
+  const pos = findEmptyCell();
+  const agent = { id:'persona_'+String(nextAgentNum++).padStart(2,'0'), ...t, pos, placedAt:Date.now() };
+  agents.push(agent);
+  selectAgent(agent.id);
+  update();
+}
+
+function removeSelAgent() {
+  if(!selectedAgent) return;
+  agents = agents.filter(a=>a.id!==selectedAgent);
+  selectedAgent = null;
+  document.getElementById('agentPanel').style.display='none';
+  update();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  DEFAULT FLOOR PLAN
+// ═══════════════════════════════════════════════════════════════
+function loadDefaultPlan() {
+  initWalls();
+  // Lobby: cols 0-5, rows 0-4
+  // Activity: cols 6-11, rows 0-4
+  // Corridor: cols 0-2, rows 5-9
+  // Dining: cols 3-8, rows 5-9
+  // Quiet: cols 9-11, rows 5-9
+  // Inner walls
+  // Vertical wall between lobby and activity at col 6, rows 0-4
+  for(let r=0;r<5;r++) vWalls[r][6]=true;
+  // Horizontal wall at row 5, cols 0-11
+  for(let c=0;c<12;c++) hWalls[5][c]=true;
+  // Vertical wall between corridor and dining at col 3, rows 5-9
+  for(let r=5;r<10;r++) vWalls[r][3]=true;
+  // Vertical wall between dining and quiet at col 9, rows 5-9
+  for(let r=5;r<10;r++) vWalls[r][9]=true;
+  // Close bottom of used area at row 10
+  for(let c=0;c<12;c++) hWalls[10][c]=true;
+  // Right wall at col 12
+  for(let r=0;r<10;r++) vWalls[r][12]=true;
+  // Bottom of lobby/activity at row 5 already done
+  // Door openings (remove wall segments)
+  // Lobby<->Activity: col 6, rows 2-3 (remove vWall)
+  vWalls[2][6]=false; vWalls[3][6]=false;
+  // Lobby<->Corridor: row 5, col 1 (remove hWall)
+  hWalls[5][1]=false;
+  // Corridor<->Dining: col 3, row 7 (remove vWall)
+  vWalls[7][3]=false;
+  // Dining<->Quiet: col 9, row 7 (remove vWall)
+  vWalls[7][9]=false;
+
+  // Features
+  wallFeatures = [
+    {type:'exit', orient:'h', r:0, c:2},
+    {type:'door', orient:'v', r:2, c:6},
+    {type:'door', orient:'v', r:3, c:6},
+    {type:'door', orient:'h', r:5, c:1},
+    {type:'door', orient:'v', r:7, c:3},
+    {type:'door', orient:'v', r:7, c:9},
+    {type:'window', orient:'v', r:1, c:0},
+    {type:'window', orient:'v', r:2, c:0},
+    {type:'window', orient:'v', r:3, c:0},
+    {type:'window', orient:'h', r:0, c:7},
+    {type:'window', orient:'h', r:0, c:8},
+    {type:'window', orient:'h', r:0, c:9},
+    {type:'window', orient:'v', r:6, c:12},
+    {type:'window', orient:'v', r:7, c:12},
+    {type:'window', orient:'v', r:8, c:12},
+    {type:'window', orient:'h', r:10, c:5},
+    {type:'window', orient:'h', r:10, c:6},
+  ];
+
+  detectRooms();
+
+  // Set room environments - find rooms by checking which cells they contain
+  for(const room of rooms) {
+    if(room.cells.has('3,2')) { // Lobby
+      room.name='Lobby'; room.env={air_temp:23,mean_radiant_temp:23,humidity:50,air_velocity:0.15,lux:350,noise_db:55}; room.ceilH=3.2;
+    } else if(room.cells.has('8,2')) { // Activity
+      room.name='Activity Room'; room.env={air_temp:25,mean_radiant_temp:25.5,humidity:55,air_velocity:0.2,lux:400,noise_db:62}; room.ceilH=3.2;
+    } else if(room.cells.has('1,7')) { // Corridor
+      room.name='Corridor'; room.env={air_temp:22,mean_radiant_temp:21.5,humidity:45,air_velocity:0.3,lux:180,noise_db:48}; room.ceilH=2.8;
+    } else if(room.cells.has('5,7')) { // Dining
+      room.name='Dining Hall'; room.env={air_temp:24,mean_radiant_temp:24,humidity:55,air_velocity:0.1,lux:300,noise_db:58}; room.ceilH=2.8;
+    } else if(room.cells.has('10,7')) { // Quiet
+      room.name='Quiet Room'; room.env={air_temp:23.5,mean_radiant_temp:23.5,humidity:50,air_velocity:0.05,lux:200,noise_db:32}; room.ceilH=2.8;
+    }
+  }
+
+  // Default agents
+  agents = [];
+  nextAgentNum = 1;
+  const a1 = {...TEMPLATES.elder_walker(), id:'persona_01', pos:[4,7], placedAt:Date.now()};
+  const a2 = {...TEMPLATES.young_visitor(), id:'persona_02', pos:[8,2], placedAt:Date.now()};
+  const a3 = {...TEMPLATES.seated_elder(), id:'persona_03', pos:[10,7], placedAt:Date.now()};
+  agents = [a1, a2, a3];
+  nextAgentNum = 4;
+}
+
+function resetPlan() { loadDefaultPlan(); selectedAgent=null; selectedRoom=null; update(); }
+function clearAll() {
+  initWalls(); wallFeatures=[]; agents=[]; nextAgentNum=1;
+  selectedAgent=null; selectedRoom=null; detectRooms(); update();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CANVAS RENDERING
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = COLS * CELL + 1;
+  canvas.height = ROWS * CELL + 1;
+}
+
+function pmvColor(pmv) {
+  if(pmv < -1.5) return '#2980b9';
+  if(pmv < -0.5) return '#5dade2';
+  if(pmv <= 0.5) return '#27ae60';
+  if(pmv <= 1.5) return '#f39c12';
+  return '#c0392b';
+}
+
+function render() {
+  resizeCanvas();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Room fills
+  for(const room of rooms) {
+    ctx.fillStyle = ROOM_COLORS[room.colorIdx];
+    for(const key of room.cells) {
+      const [x,y] = key.split(',').map(Number);
+      ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+    }
+  }
+
+  // Grid lines
+  ctx.strokeStyle = '#e8e4dc';
+  ctx.lineWidth = 0.5;
+  for(let x=0;x<=COLS;x++) { ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,ROWS*CELL); ctx.stroke(); }
+  for(let y=0;y<=ROWS;y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(COLS*CELL,y*CELL); ctx.stroke(); }
+
+  // Room labels
+  ctx.font = '10px "SF Mono","Fira Code",monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for(const room of rooms) {
+    // Find centroid
+    let sx=0, sy=0, n=0;
+    for(const key of room.cells) {
+      const [x,y] = key.split(',').map(Number);
+      sx+=x; sy+=y; n++;
+    }
+    if(n>0) {
+      ctx.fillStyle = 'rgba(45,45,45,0.4)';
+      ctx.fillText(room.name, (sx/n+0.5)*CELL, (sy/n+0.5)*CELL);
+    }
+  }
+
+  // Walls
+  ctx.strokeStyle = '#2d2d2d';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  // Horizontal walls
+  for(let r=0;r<=ROWS;r++) for(let c=0;c<COLS;c++) {
+    if(!hWalls[r] || !hWalls[r][c]) continue;
+    ctx.beginPath(); ctx.moveTo(c*CELL, r*CELL); ctx.lineTo((c+1)*CELL, r*CELL); ctx.stroke();
+  }
+  // Vertical walls
+  for(let r=0;r<ROWS;r++) for(let c=0;c<=COLS;c++) {
+    if(!vWalls[r] || !vWalls[r][c]) continue;
+    ctx.beginPath(); ctx.moveTo(c*CELL, r*CELL); ctx.lineTo(c*CELL, (r+1)*CELL); ctx.stroke();
+  }
+
+  // Wall features
+  for(const f of wallFeatures) {
+    const colors = {window:'#4a7fb5', door:'#8b6914', exit:'#27ae60'};
+    ctx.strokeStyle = colors[f.type] || '#888';
+    ctx.lineWidth = f.type==='window' ? 4 : 5;
+    if(f.orient==='h') {
+      const y = f.r*CELL;
+      ctx.beginPath(); ctx.moveTo(f.c*CELL+2, y); ctx.lineTo((f.c+1)*CELL-2, y); ctx.stroke();
+    } else {
+      const x = f.c*CELL;
+      ctx.beginPath(); ctx.moveTo(x, f.r*CELL+2); ctx.lineTo(x, (f.r+1)*CELL-2); ctx.stroke();
+    }
+    // Window gets dashes
+    if(f.type==='window') {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3,3]);
+      if(f.orient==='h') {
+        const y = f.r*CELL;
+        ctx.beginPath(); ctx.moveTo(f.c*CELL+4, y); ctx.lineTo((f.c+1)*CELL-4, y); ctx.stroke();
+      } else {
+        const x = f.c*CELL;
+        ctx.beginPath(); ctx.moveTo(x, f.r*CELL+4); ctx.lineTo(x, (f.r+1)*CELL-4); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+  }
+
+  // Agents
+  for(const agent of agents) {
+    const [ax,ay] = agent.pos;
+    const cx = ax*CELL + CELL/2, cy = ay*CELL + CELL/2;
+    const snap = agentSnapshot(agent);
+    const pmv = snap.computed ? snap.computed.pmv : 0;
+    const col = pmvColor(pmv);
+
+    // Shadow
+    ctx.beginPath(); ctx.arc(cx+1,cy+1,11,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.15)'; ctx.fill();
+
+    // Body
+    ctx.beginPath(); ctx.arc(cx,cy,11,0,Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = agent.id===selectedAgent ? '#2d2d2d' : 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = agent.id===selectedAgent ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 8px "SF Mono",monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(agent.id.replace('persona_','P'), cx, cy);
+
+    // PMV badge
+    ctx.font = '9px "SF Mono",monospace';
+    ctx.fillStyle = '#2d2d2d';
+    ctx.fillText(pmv.toFixed(1), cx, cy+18);
+  }
+
+  // Highlight selected room
+  if(selectedRoom) {
+    const room = rooms.find(r=>r.id===selectedRoom);
+    if(room) {
+      ctx.strokeStyle = 'rgba(139,115,85,0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4,4]);
+      for(const key of room.cells) {
+        const [x,y] = key.split(',').map(Number);
+        ctx.strokeRect(x*CELL+1, y*CELL+1, CELL-2, CELL-2);
+      }
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CHARTS
+// ═══════════════════════════════════════════════════════════════
+function drawPMVChart() {
+  const c = document.getElementById('pmvChart');
+  const cx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  cx.clearRect(0,0,W,H);
+
+  // Background scale
+  const grad = cx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,'rgba(41,128,185,0.15)');
+  grad.addColorStop(0.35,'rgba(41,128,185,0.05)');
+  grad.addColorStop(0.5,'rgba(39,174,96,0.1)');
+  grad.addColorStop(0.65,'rgba(243,156,18,0.05)');
+  grad.addColorStop(1,'rgba(192,57,43,0.15)');
+  cx.fillStyle = grad;
+  cx.fillRect(0,0,W,H);
+
+  // Center line
+  cx.strokeStyle = '#ccc'; cx.lineWidth=1;
+  cx.setLineDash([2,2]);
+  cx.beginPath(); cx.moveTo(W/2,0); cx.lineTo(W/2,H); cx.stroke();
+  cx.setLineDash([]);
+
+  // Comfort zone
+  const comL = W*(0.5-0.5/6), comR = W*(0.5+0.5/6);
+  cx.fillStyle='rgba(39,174,96,0.08)';
+  cx.fillRect(comL,0,comR-comL,H);
+  cx.strokeStyle='rgba(39,174,96,0.3)'; cx.lineWidth=1;
+  cx.strokeRect(comL,0,comR-comL,H);
+
+  if(!agents.length) return;
+
+  // Plot agents
+  const spacing = Math.min(30, (H-20)/agents.length);
+  agents.forEach((agent, i) => {
+    const snap = agentSnapshot(agent);
+    const pmv = snap.computed ? snap.computed.pmv : 0;
+    const x = W/2 + (pmv/3)*(W/2);
+    const y = 15 + i*spacing;
+    const col = pmvColor(pmv);
+
+    cx.beginPath(); cx.arc(x, y, 6, 0, Math.PI*2);
+    cx.fillStyle = col; cx.fill();
+    cx.strokeStyle='#fff'; cx.lineWidth=1.5; cx.stroke();
+
+    cx.font = '9px "SF Mono",monospace';
+    cx.fillStyle = '#2d2d2d';
+    cx.textAlign = 'left';
+    cx.fillText(agent.id.replace('persona_','P')+' '+pmv.toFixed(1), x+10, y+3);
+  });
+}
+
+function drawPPDChart() {
+  const c = document.getElementById('ppdChart');
+  const cx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  cx.clearRect(0,0,W,H);
+
+  if(!agents.length) { cx.fillStyle='#999'; cx.font='11px monospace'; cx.fillText('No agents',10,30); return; }
+
+  const barH = Math.min(18, (H-10)/agents.length);
+  const maxW = W - 80;
+
+  agents.forEach((agent, i) => {
+    const snap = agentSnapshot(agent);
+    const ppd = snap.computed ? snap.computed.ppd : 0;
+    const y = 5 + i*(barH+4);
+
+    // Label
+    cx.font = '9px "SF Mono",monospace';
+    cx.fillStyle = '#2d2d2d';
+    cx.textAlign = 'left';
+    cx.fillText(agent.id.replace('persona_','P'), 4, y+barH/2+3);
+
+    // Bar background
+    cx.fillStyle = '#f0f0f0';
+    cx.fillRect(45, y, maxW, barH);
+
+    // Bar fill
+    const bw = (ppd/100)*maxW;
+    const col = ppd<10?'#27ae60':ppd<20?'#f39c12':ppd<40?'#e67e22':'#c0392b';
+    cx.fillStyle = col;
+    cx.fillRect(45, y, bw, barH);
+
+    // Value
+    cx.fillStyle = '#2d2d2d';
+    cx.textAlign = 'left';
+    cx.fillText(ppd.toFixed(0)+'%', 48+bw, y+barH/2+3);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UI PANELS
+// ═══════════════════════════════════════════════════════════════
+function selectAgent(id) {
+  selectedAgent = id;
+  selectedRoom = null;
+  updateAgentList();
+  updateAgentPanel();
+  updateJSON();
+  render();
+}
+
+function updateAgentList() {
+  const list = document.getElementById('agentList');
+  document.getElementById('agentCount').textContent = '('+agents.length+')';
+  list.innerHTML = '';
+  for(const a of agents) {
+    const snap = agentSnapshot(a);
+    const pmv = snap.computed ? snap.computed.pmv : 0;
+    const div = document.createElement('div');
+    div.className = 'agent-item' + (a.id===selectedAgent?' sel':'');
+    div.innerHTML = '<div style="display:flex;align-items:center"><div class="dot" style="background:'+pmvColor(pmv)+'"></div>'+
+      '<span>'+a.id+'</span></div><span style="color:#888">'+a.demo.age+a.demo.gender[0].toUpperCase()+' PMV '+pmv.toFixed(1)+'</span>';
+    div.onclick = () => selectAgent(a.id);
+    list.appendChild(div);
+  }
+}
+
+function updateAgentPanel() {
+  const panel = document.getElementById('agentPanel');
+  if(!selectedAgent) { panel.style.display='none'; return; }
+  panel.style.display='';
+  const agent = agents.find(a=>a.id===selectedAgent);
+  if(!agent) { panel.style.display='none'; return; }
+  document.getElementById('agentTitle').textContent = agent.id;
+  const body = document.getElementById('agentBody');
+  const d = agent.demo, p = agent.prefs;
+
+  body.innerHTML = `
+    <div class="field"><label>ID</label><input type="text" value="${agent.id}" onchange="updAgent('id',this.value)" style="width:100px"></div>
+    <div class="field"><label>Age</label><input type="number" value="${d.age}" min="1" max="120" onchange="updAgent('age',+this.value)"></div>
+    <div class="field"><label>Gender</label><select onchange="updAgent('gender',this.value)"><option ${d.gender==='male'?'selected':''}>male</option><option ${d.gender==='female'?'selected':''}>female</option></select></div>
+    <div class="field"><label>Weight kg</label><input type="number" value="${d.wt}" min="20" max="200" step="1" onchange="updAgent('wt',+this.value)"></div>
+    <div class="field"><label>Height cm</label><input type="number" value="${d.ht}" min="100" max="220" step="1" onchange="updAgent('ht',+this.value)"></div>
+    <div class="field"><label>Mobility</label><select onchange="updAgent('mobility',this.value)">
+      ${['normal','uses_cane','uses_walker','wheelchair'].map(v=>'<option'+(d.mobility===v?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+    <div class="field"><label>Hearing</label><select onchange="updAgent('hearing',this.value)">
+      ${['normal','impaired','deaf'].map(v=>'<option'+(d.hearing===v?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+    <div class="field"><label>Vision</label><select onchange="updAgent('vision',this.value)">
+      ${['normal','mild_impairment','severe_impairment','blind'].map(v=>'<option'+(d.vision===v?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+    <hr style="margin:6px 0;border:none;border-top:1px solid #e8e4dc">
+    <div class="field"><label>Clothing clo</label><input type="number" value="${agent.clo}" min="0" max="3" step="0.1" onchange="updAgent('clo',+this.value)"></div>
+    <div class="field"><label>Activity</label><select onchange="updAgent('activity',this.value)">
+      ${['seated','standing','walking'].map(v=>'<option'+(agent.activity===v?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+    <hr style="margin:6px 0;border:none;border-top:1px solid #e8e4dc">
+    <div class="field"><label>Noise tol. dB</label><input type="number" value="${p.noiseTol}" min="20" max="90" onchange="updAgent('noiseTol',+this.value)"></div>
+    <div class="field"><label>Light pref.</label><select onchange="updAgent('lightPref',this.value)">
+      ${['dim','moderate','bright'].map(v=>'<option'+(p.lightPref===v?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+    <div class="field"><label>Social den.</label><select onchange="updAgent('socialDen',this.value)">
+      ${['low_den','moderate','high_den'].map(v=>'<option'+(p.socialDen===v?' selected':'')+'>'+v+'</option>').join('')}</select></div>
+  `;
+}
+
+function updAgent(key, val) {
+  const agent = agents.find(a=>a.id===selectedAgent);
+  if(!agent) return;
+  if(key==='id') { const old=agent.id; agent.id=val; selectedAgent=val; }
+  else if(['age','gender','wt','ht','mobility','hearing','vision'].includes(key)) agent.demo[key]=val;
+  else if(['noiseTol','lightPref','socialDen'].includes(key)) agent.prefs[key]=val;
+  else if(key==='clo') agent.clo=val;
+  else if(key==='activity') agent.activity=val;
+  update();
+}
+
+function showRoomPanel(roomId) {
+  const room = rooms.find(r=>r.id===roomId);
+  if(!room) return;
+  selectedRoom = roomId;
+  selectedAgent = null;
+  document.getElementById('agentPanel').style.display='none';
+  const panel = document.getElementById('roomPanel');
+  panel.style.display = '';
+  document.getElementById('roomTitle').textContent = room.name;
+  const e = room.env;
+  const body = document.getElementById('roomBody');
+  body.innerHTML = `
+    <div class="field"><label>Name</label><input type="text" value="${room.name}" onchange="updRoom('name',this.value)" style="width:100px"></div>
+    <div class="field"><label>Air temp °C</label><input type="range" min="10" max="35" step="0.5" value="${e.air_temp}" oninput="updRoom('air_temp',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${e.air_temp}" min="10" max="35" step="0.5" onchange="updRoom('air_temp',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>MRT °C</label><input type="range" min="10" max="35" step="0.5" value="${e.mean_radiant_temp}" oninput="updRoom('mean_radiant_temp',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${e.mean_radiant_temp}" min="10" max="35" step="0.5" onchange="updRoom('mean_radiant_temp',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Humidity %</label><input type="range" min="0" max="100" step="1" value="${e.humidity}" oninput="updRoom('humidity',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${e.humidity}" min="0" max="100" onchange="updRoom('humidity',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Air vel. m/s</label><input type="range" min="0" max="2" step="0.05" value="${e.air_velocity}" oninput="updRoom('air_velocity',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${e.air_velocity}" min="0" max="2" step="0.05" onchange="updRoom('air_velocity',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Lux</label><input type="range" min="0" max="1000" step="10" value="${e.lux}" oninput="updRoom('lux',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${e.lux}" min="0" max="1000" onchange="updRoom('lux',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Noise dB</label><input type="range" min="20" max="90" step="1" value="${e.noise_db}" oninput="updRoom('noise_db',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${e.noise_db}" min="20" max="90" onchange="updRoom('noise_db',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Ceiling m</label><input type="number" value="${room.ceilH}" min="2" max="6" step="0.1" onchange="updRoom('ceilH',+this.value)"></div>
+  `;
+  render();
+}
+
+function updRoom(key, val) {
+  const room = rooms.find(r=>r.id===selectedRoom);
+  if(!room) return;
+  if(key==='name') { room.name=val; document.getElementById('roomTitle').textContent=val; }
+  else if(key==='ceilH') room.ceilH=val;
+  else room.env[key]=val;
+  update();
+}
+
+function updateJSON() {
+  const view = document.getElementById('jsonView');
+  if(!selectedAgent) { view.textContent='Select an agent to see their computed snapshot.'; return; }
+  const agent = agents.find(a=>a.id===selectedAgent);
+  if(!agent) { view.textContent='Agent not found.'; return; }
+  const snap = agentSnapshot(agent);
+  // Syntax-highlighted JSON
+  const json = JSON.stringify(snap, null, 2);
+  view.innerHTML = json.replace(/("(?:[^"\\]|\\.)*")\s*:/g, '<span class="key">$1</span>:')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="str">$1</span>')
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="num">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="bool">$1</span>');
+}
+
+function update() {
+  render();
+  updateAgentList();
+  updateJSON();
+  drawPMVChart();
+  drawPPDChart();
+  const nA = agents.length;
+  document.getElementById('statusL').textContent = nA + ' agent' + (nA!==1?'s':'') + ' on plan · Tool: ' + currentTool;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CANVAS INTERACTION / TOOLS
+// ═══════════════════════════════════════════════════════════════
+function getGridPos(e) {
+  const r = canvas.getBoundingClientRect();
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  return { px: x, py: y, col: Math.floor(x/CELL), row: Math.floor(y/CELL) };
+}
+
+function nearestEdge(px, py) {
+  // Find the closest wall edge to pixel position
+  const col = px / CELL, row = py / CELL;
+  const cellX = Math.floor(col), cellY = Math.floor(row);
+  const fracX = col - cellX, fracY = row - cellY;
+
+  // Which edge is closest?
+  const dTop = fracY, dBot = 1-fracY, dLeft = fracX, dRight = 1-fracX;
+  const minD = Math.min(dTop, dBot, dLeft, dRight);
+
+  if(minD === dTop) return { orient:'h', r:cellY, c:cellX };
+  if(minD === dBot) return { orient:'h', r:cellY+1, c:cellX };
+  if(minD === dLeft) return { orient:'v', r:cellY, c:cellX };
+  return { orient:'v', r:cellY, c:cellX+1 };
+}
+
+function agentAtPixel(px, py) {
+  for(const a of agents) {
+    const cx = a.pos[0]*CELL + CELL/2, cy = a.pos[1]*CELL + CELL/2;
+    if(Math.hypot(px-cx, py-cy) <= 14) return a;
+  }
+  return null;
+}
+
+// Tool button handling
+document.querySelectorAll('.toolbar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toolbar-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentTool = btn.dataset.tool;
+    canvas.style.cursor = currentTool==='select' ? 'default' : 'crosshair';
+    update();
+  });
+});
+
+// Mouse handling
+canvas.addEventListener('mousedown', (e) => {
+  const {px, py, col, row} = getGridPos(e);
+
+  if(currentTool === 'select') {
+    // Check if clicking an agent
+    const a = agentAtPixel(px, py);
+    if(a) {
+      dragAgent = a;
+      selectedAgent = a.id;
+      selectedRoom = null;
+      document.getElementById('roomPanel').style.display='none';
+      updateAgentPanel();
+      updateJSON();
+      render();
+      return;
+    }
+    // Check if clicking a room
+    if(canMove(col,row)) {
+      const room = roomAt(col,row);
+      if(room) {
+        showRoomPanel(room.id);
+      }
+    }
+    return;
+  }
+
+  const edge = nearestEdge(px, py);
+
+  if(currentTool === 'wall') {
+    if(edge.orient === 'h' && edge.r >= 0 && edge.r <= ROWS && edge.c >= 0 && edge.c < COLS) {
+      hWalls[edge.r][edge.c] = !hWalls[edge.r][edge.c];
+    } else if(edge.orient === 'v' && edge.r >= 0 && edge.r < ROWS && edge.c >= 0 && edge.c <= COLS) {
+      vWalls[edge.r][edge.c] = !vWalls[edge.r][edge.c];
+    }
+    detectRooms();
+    update();
+    return;
+  }
+
+  if(currentTool === 'erase') {
+    // Remove feature at this edge
+    wallFeatures = wallFeatures.filter(f => !(f.orient===edge.orient && f.r===edge.r && f.c===edge.c));
+    // Also try to erase wall
+    if(edge.orient === 'h' && edge.r > 0 && edge.r < ROWS && edge.c >= 0 && edge.c < COLS) {
+      hWalls[edge.r][edge.c] = false;
+    } else if(edge.orient === 'v' && edge.r >= 0 && edge.r < ROWS && edge.c > 0 && edge.c < COLS) {
+      vWalls[edge.r][edge.c] = false;
+    }
+    detectRooms();
+    update();
+    return;
+  }
+
+  if(['window','door','exit'].includes(currentTool)) {
+    // Check if there's a wall at this edge
+    let hasWall = false;
+    if(edge.orient === 'h' && hWalls[edge.r] && hWalls[edge.r][edge.c]) hasWall = true;
+    if(edge.orient === 'v' && vWalls[edge.r] && vWalls[edge.r][edge.c]) hasWall = true;
+    if(!hasWall) return; // can only place on walls
+
+    // Remove existing feature at this location
+    wallFeatures = wallFeatures.filter(f => !(f.orient===edge.orient && f.r===edge.r && f.c===edge.c));
+    wallFeatures.push({ type: currentTool==='exit'?'exit':currentTool, orient:edge.orient, r:edge.r, c:edge.c });
+    update();
+    return;
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if(!dragAgent) return;
+  const {col, row} = getGridPos(e);
+  if(canMove(col,row) && (col !== dragAgent.pos[0] || row !== dragAgent.pos[1])) {
+    dragAgent.pos = [col, row];
+    dragAgent.placedAt = Date.now();
+    update();
+    updateAgentPanel();
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  dragAgent = null;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  dragAgent = null;
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+loadDefaultPlan();
+selectAgent('persona_01');
+update();
+
+
+</script>
+</body>
+</html>
