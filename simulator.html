@@ -201,6 +201,8 @@ let nextAgentNum = 1;
 let currentTool = 'select';
 let dragAgent = null;
 let dragOffX = 0, dragOffY = 0;
+let isDrawingWall = false;  // for click-drag wall drawing
+let wallDrawValue = true;   // are we adding or removing walls
 
 // ═══════════════════════════════════════════════════════════════
 //  WALL GRID INIT & HELPERS
@@ -233,15 +235,14 @@ function wallBetween(x1,y1,x2,y2) {
 // ═══════════════════════════════════════════════════════════════
 function detectRooms() {
   const visited = Array.from({length:ROWS}, ()=>Array(COLS).fill(false));
-  const oldRooms = new Map(); // id -> env/name for persistence
-  rooms.forEach(r => oldRooms.set(r.id, {name:r.name, env:{...r.env}, ceilH:r.ceilH}));
+  // Save old rooms for matching by cell overlap (not index)
+  const oldRooms = rooms.slice();
 
-  rooms = [];
+  const newRooms = [];
   let roomIdx = 0;
 
   for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) {
     if(visited[y][x]) continue;
-    // BFS flood fill
     const cells = new Set();
     const queue = [[x,y]];
     visited[y][x] = true;
@@ -255,19 +256,26 @@ function detectRooms() {
         queue.push([nx,ny]);
       }
     }
+    // Match to old room with best cell overlap to preserve env settings
+    let bestMatch = null, bestOverlap = 0;
+    for(const old of oldRooms) {
+      let overlap = 0;
+      for(const key of cells) { if(old.cells.has(key)) overlap++; }
+      if(overlap > bestOverlap) { bestOverlap = overlap; bestMatch = old; }
+    }
     const id = 'room_'+roomIdx;
-    const old = oldRooms.get(id);
-    const defaultEnv = {air_temp:24, mean_radiant_temp:24, humidity:50, air_velocity:0.1, lux:300, noise_db:40};
-    rooms.push({
-      id: id,
-      name: old ? old.name : 'Room '+ String.fromCharCode(65+roomIdx),
-      cells: cells,
-      env: old ? {...old.env} : {...defaultEnv},
-      ceilH: old ? old.ceilH : 2.8,
-      colorIdx: roomIdx % ROOM_COLORS.length
-    });
+    if(bestMatch && bestOverlap > 0) {
+      newRooms.push({ id, name:bestMatch.name, cells, env:{...bestMatch.env}, ceilH:bestMatch.ceilH, colorIdx:roomIdx%ROOM_COLORS.length });
+      // Remove matched old room so it can't double-match
+      const mi = oldRooms.indexOf(bestMatch);
+      if(mi>=0) oldRooms.splice(mi,1);
+    } else {
+      const defaultEnv = {air_temp:24, mean_radiant_temp:24, humidity:50, air_velocity:0.1, lux:300, noise_db:40};
+      newRooms.push({ id, name:'Room '+String.fromCharCode(65+(roomIdx%26)), cells, env:{...defaultEnv}, ceilH:2.8, colorIdx:roomIdx%ROOM_COLORS.length });
+    }
     roomIdx++;
   }
+  rooms = newRooms;
 }
 
 function roomAt(x,y) {
@@ -950,11 +958,15 @@ canvas.addEventListener('mousedown', (e) => {
   const edge = nearestEdge(px, py);
 
   if(currentTool === 'wall') {
+    // Toggle the first segment and start drag-drawing
     if(edge.orient === 'h' && edge.r >= 0 && edge.r <= ROWS && edge.c >= 0 && edge.c < COLS) {
-      hWalls[edge.r][edge.c] = !hWalls[edge.r][edge.c];
+      wallDrawValue = !hWalls[edge.r][edge.c];
+      hWalls[edge.r][edge.c] = wallDrawValue;
     } else if(edge.orient === 'v' && edge.r >= 0 && edge.r < ROWS && edge.c >= 0 && edge.c <= COLS) {
-      vWalls[edge.r][edge.c] = !vWalls[edge.r][edge.c];
+      wallDrawValue = !vWalls[edge.r][edge.c];
+      vWalls[edge.r][edge.c] = wallDrawValue;
     }
+    isDrawingWall = true;
     detectRooms();
     update();
     return;
@@ -963,12 +975,13 @@ canvas.addEventListener('mousedown', (e) => {
   if(currentTool === 'erase') {
     // Remove feature at this edge
     wallFeatures = wallFeatures.filter(f => !(f.orient===edge.orient && f.r===edge.r && f.c===edge.c));
-    // Also try to erase wall
+    // Also try to erase wall (not border walls)
     if(edge.orient === 'h' && edge.r > 0 && edge.r < ROWS && edge.c >= 0 && edge.c < COLS) {
       hWalls[edge.r][edge.c] = false;
     } else if(edge.orient === 'v' && edge.r >= 0 && edge.r < ROWS && edge.c > 0 && edge.c < COLS) {
       vWalls[edge.r][edge.c] = false;
     }
+    isDrawingWall = true; wallDrawValue = false; // enable drag-erasing
     detectRooms();
     update();
     return;
@@ -990,8 +1003,31 @@ canvas.addEventListener('mousedown', (e) => {
 });
 
 canvas.addEventListener('mousemove', (e) => {
+  const {px, py, col, row} = getGridPos(e);
+
+  // Wall drag-drawing / drag-erasing
+  if(isDrawingWall && (currentTool === 'wall' || currentTool === 'erase')) {
+    const edge = nearestEdge(px, py);
+    if(currentTool === 'erase') {
+      wallFeatures = wallFeatures.filter(f => !(f.orient===edge.orient && f.r===edge.r && f.c===edge.c));
+    }
+    let changed = false;
+    if(edge.orient === 'h' && edge.r >= 0 && edge.r <= ROWS && edge.c >= 0 && edge.c < COLS) {
+      // Don't erase border walls
+      if(wallDrawValue || (edge.r > 0 && edge.r < ROWS)) {
+        if(hWalls[edge.r][edge.c] !== wallDrawValue) { hWalls[edge.r][edge.c] = wallDrawValue; changed=true; }
+      }
+    } else if(edge.orient === 'v' && edge.r >= 0 && edge.r < ROWS && edge.c >= 0 && edge.c <= COLS) {
+      if(wallDrawValue || (edge.c > 0 && edge.c < COLS)) {
+        if(vWalls[edge.r][edge.c] !== wallDrawValue) { vWalls[edge.r][edge.c] = wallDrawValue; changed=true; }
+      }
+    }
+    if(changed) { detectRooms(); update(); }
+    return;
+  }
+
+  // Agent dragging (allow free placement, rooms recompute)
   if(!dragAgent) return;
-  const {col, row} = getGridPos(e);
   if(canMove(col,row) && (col !== dragAgent.pos[0] || row !== dragAgent.pos[1])) {
     dragAgent.pos = [col, row];
     dragAgent.placedAt = Date.now();
@@ -1001,10 +1037,12 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 canvas.addEventListener('mouseup', () => {
+  if(isDrawingWall) { isDrawingWall = false; }
   dragAgent = null;
 });
 
 canvas.addEventListener('mouseleave', () => {
+  if(isDrawingWall) { isDrawingWall = false; }
   dragAgent = null;
 });
 
