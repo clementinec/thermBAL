@@ -131,7 +131,7 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
         <div class="add-row">
           <button class="btn btn-a" onclick="autoDetectFootprint()" style="flex:1">Auto Detect Footprint</button>
         </div>
-        <div class="muted">Uses the current PDF alignment. Replaces the traced geometry with a candidate footprint and exterior wall ring.</div>
+        <div class="muted">Uses the current PDF alignment. Builds a candidate outer footprint by merging enclosed interior regions across thin partitions, then regenerates the exterior wall ring.</div>
       </div>
     </div>
 
@@ -169,7 +169,7 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
       <div class="canvas-overlay" id="emptyOverlay">
         <div class="canvas-guide">
           <strong id="emptyOverlayTitle">Define Footprint First</strong>
-          <p id="emptyOverlayBody">Use Auto Detect Footprint for a first pass, then refine the occupiable area with the Footprint tool. Walls, windows, doors, and exits only become usable after that footprint exists.</p>
+          <p id="emptyOverlayBody">Use Auto Detect Footprint for a first pass on the outer envelope, then refine the occupiable area with the Footprint tool. Walls, windows, doors, and exits only become usable after that footprint exists.</p>
         </div>
       </div>
     </div>
@@ -231,13 +231,17 @@ const FOOTPRINT_DETECT = {
   maxDim: 1400,
   luminanceThreshold: 236,
   minCellFill: 0.14,
-  minCellPixels: 8
+  minCellPixels: 8,
+  bridgeGapCells: 1,
+  bridgePasses: 2,
+  minComponentCells: 2,
+  keepComponentRatio: 0.08
 };
 
 const TOOL_HINTS = {
   select:'Select rooms to rename them and inspect the traced zoning.',
   floor:'Confirm or refine the occupiable footprint. Drag across empty cells to add them and across active cells to erase.',
-  wall:'Draw partition walls on grid edges to create enclosed rooms. Exterior walls are auto-generated from the footprint.',
+  wall:'Draw interior partition walls on grid edges to create enclosed rooms. Exterior walls are auto-generated from the footprint.',
   window:'Place windows on traced wall edges.',
   door:'Place door openings on traced wall edges.',
   exit:'Place exit openings on exterior wall edges.',
@@ -317,6 +321,10 @@ function edgeKey(edge) {
 
 function sameEdge(a, b) {
   return !!a && !!b && a.orient === b.orient && a.r === b.r && a.c === b.c;
+}
+
+function cellSetHas(cells, x, y) {
+  return cells.has(cellKey(x, y));
 }
 
 function canMove(x, y) {
@@ -453,6 +461,95 @@ function floodFillExterior(barrier, width, height) {
   return exterior;
 }
 
+function connectedCellComponents(cells) {
+  const pending = new Set(cells);
+  const components = [];
+
+  while(pending.size) {
+    const start = pending.values().next().value;
+    pending.delete(start);
+    const component = new Set([start]);
+    const queue = [parseCellKey(start)];
+
+    while(queue.length) {
+      const [x, y] = queue.shift();
+      for(const [nx, ny] of [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]) {
+        if(!canMove(nx, ny)) continue;
+        const key = cellKey(nx, ny);
+        if(!pending.has(key)) continue;
+        pending.delete(key);
+        component.add(key);
+        queue.push([nx, ny]);
+      }
+    }
+
+    components.push(component);
+  }
+
+  return components;
+}
+
+function filterFootprintComponents(cells) {
+  if(!cells.size) return cells;
+  const components = connectedCellComponents(cells);
+  const largest = components.reduce((best, component) => Math.max(best, component.size), 0);
+  const keepThreshold = Math.max(
+    FOOTPRINT_DETECT.minComponentCells,
+    Math.round(largest * FOOTPRINT_DETECT.keepComponentRatio)
+  );
+  const filtered = new Set();
+  for(const component of components) {
+    if(component.size < keepThreshold) continue;
+    for(const key of component) filtered.add(key);
+  }
+  return filtered;
+}
+
+function bridgeFootprintGaps(cells, maxGap = FOOTPRINT_DETECT.bridgeGapCells) {
+  const bridged = new Set(cells);
+
+  for(let y = 0; y < ROWS; y++) {
+    let x = 0;
+    while(x < COLS) {
+      while(x < COLS && !cellSetHas(bridged, x, y)) x++;
+      if(x >= COLS) break;
+      x++;
+      const gapStart = x;
+      while(x < COLS && !cellSetHas(bridged, x, y)) x++;
+      const gapLen = x - gapStart;
+      if(x < COLS && gapLen > 0 && gapLen <= maxGap) {
+        for(let fillX = gapStart; fillX < x; fillX++) bridged.add(cellKey(fillX, y));
+      }
+    }
+  }
+
+  for(let x = 0; x < COLS; x++) {
+    let y = 0;
+    while(y < ROWS) {
+      while(y < ROWS && !cellSetHas(bridged, x, y)) y++;
+      if(y >= ROWS) break;
+      y++;
+      const gapStart = y;
+      while(y < ROWS && !cellSetHas(bridged, x, y)) y++;
+      const gapLen = y - gapStart;
+      if(y < ROWS && gapLen > 0 && gapLen <= maxGap) {
+        for(let fillY = gapStart; fillY < y; fillY++) bridged.add(cellKey(x, fillY));
+      }
+    }
+  }
+
+  return bridged;
+}
+
+function refineFootprintSeeds(seedCells) {
+  let refined = filterFootprintComponents(seedCells);
+  for(let pass = 0; pass < FOOTPRINT_DETECT.bridgePasses; pass++) {
+    refined = bridgeFootprintGaps(refined, FOOTPRINT_DETECT.bridgeGapCells);
+    refined = filterFootprintComponents(refined);
+  }
+  return refined;
+}
+
 function buildFootprintFromPdf() {
   if(!pdfCanvas) return null;
 
@@ -493,7 +590,7 @@ function buildFootprintFromPdf() {
     interior[i] = barrier[i] || exterior[i] ? 0 : 1;
   }
 
-  const detected = new Set();
+  const seeds = new Set();
   for(let y = 0; y < ROWS; y++) {
     for(let x = 0; x < COLS; x++) {
       const rawX0 = Math.floor(x * CELL * rasterScale);
@@ -519,12 +616,12 @@ function buildFootprintFromPdf() {
 
       if(sampleCount === 0) continue;
       if(interiorCount >= FOOTPRINT_DETECT.minCellPixels && interiorCount / sampleCount >= FOOTPRINT_DETECT.minCellFill) {
-        detected.add(cellKey(x, y));
+        seeds.add(cellKey(x, y));
       }
     }
   }
 
-  return detected;
+  return refineFootprintSeeds(seeds);
 }
 
 function autoDetectFootprint(announce = true) {
@@ -547,7 +644,7 @@ function autoDetectFootprint(announce = true) {
   setTool('floor');
   update();
   if(announce) {
-    setStatus('Auto-detected ' + detected.size + ' footprint cells and generated exterior walls. Refine the footprint, then add interior partitions.', true);
+    setStatus('Auto-detected ' + detected.size + ' footprint cells as an outer envelope and generated exterior walls. Refine it, then add interior partitions.', true);
   }
   return true;
 }
@@ -1105,7 +1202,7 @@ function finishPdfLoad(label) {
   const detected = autoDetectFootprint(false);
   setTool('floor');
   if(detected) {
-    setStatus('Loaded ' + label + ' and auto-detected a candidate footprint. Refine it, then add interior partitions.', true);
+    setStatus('Loaded ' + label + ' and auto-detected a candidate outer footprint. Refine it, then add interior partitions.', true);
     return;
   }
   setStatus('Loaded ' + label + '. Auto detect did not find a usable footprint, so refine it manually or adjust the PDF and retry.', true);
