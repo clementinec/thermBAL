@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>thermBAL - Geometry Importer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#faf9f6;--fg:#2d2d2d;--border:#d4d0c8;--accent:#8b7355;--panel:#f5f3ee;--muted:#7b7368;--red:#c0392b}
+body{font-family:"SF Mono","Fira Code","Consolas",monospace;background:var(--bg);color:var(--fg);height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:12px}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--panel)}
+header h1{font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+header span{font-size:11px;color:var(--accent)}
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar,.sidebar-r{background:var(--panel);padding:8px;overflow-y:auto;flex-shrink:0;min-width:0}
+.sidebar{width:310px;border-right:1px solid var(--border)}
+.sidebar-r{width:300px;border-left:1px solid var(--border)}
+.center{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px;background:radial-gradient(circle at 20% 20%, #fffdf8 0, #fffdf8 24%, #f5efe4 100%)}
+canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;box-shadow:0 12px 24px rgba(45,45,45,0.08)}
+.panel{margin-bottom:8px;border:1px solid var(--border);background:#fff;border-radius:4px}
+.panel-hdr{padding:6px 8px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.panel-body{padding:8px}
+.tool-note,.empty,.muted{font-size:10px;line-height:1.5;color:var(--muted)}
+.tool-note{margin-bottom:8px}
+.toolbar-row,.add-row{display:flex;gap:4px;flex-wrap:wrap}
+.add-row{margin-bottom:6px}
+.toolbar-btn,.btn{padding:4px 10px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;font-size:11px;border-radius:3px;text-decoration:none;color:inherit}
+.toolbar-btn.active{background:var(--fg);color:#fff}
+.toolbar-btn:hover:not(.active),.btn:hover{background:#eee}
+.btn-a{background:var(--fg);color:#fff;border-color:var(--fg)}
+.btn-a:hover{background:#444}
+.btn-d{color:var(--red);border-color:var(--red)}
+.field{display:grid;grid-template-columns:84px minmax(0,1fr) 70px;align-items:center;gap:6px;margin-bottom:6px}
+.field label{font-size:11px}
+.field input[type=range]{width:100%;min-width:0}
+.field input[type=number],.field input[type=text],.field select{width:100%;min-width:0;padding:2px 4px;border:1px solid var(--border);font-family:inherit;font-size:11px;border-radius:2px}
+.field > :nth-child(2):last-child{grid-column:2 / 4}
+.field.compact{grid-template-columns:84px minmax(0,1fr)}
+.stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.stat-card{padding:6px;border:1px solid var(--border);border-radius:3px;background:#fcfbf9;min-width:0}
+.stat-card .label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat-card .value{margin-top:4px;font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.room-item{padding:6px;border:1px solid var(--border);border-radius:3px;margin-bottom:4px;cursor:pointer;background:#fff}
+.room-item.sel{border-color:var(--accent);background:#f0ebe3}
+.room-item .sub{margin-top:4px;font-size:10px;color:var(--muted)}
+.status-bar{padding:4px 16px;border-top:1px solid var(--border);background:var(--panel);font-size:10px;display:flex;justify-content:space-between;gap:16px}
+@media(max-width:1320px){
+  .sidebar{width:290px}
+  .sidebar-r{width:280px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>thermBAL - Geometry Importer</h1>
+  <span>Assisted PDF-backed tracing workflow</span>
+</header>
+<div class="main">
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-hdr">Source</div>
+      <div class="panel-body">
+        <div class="tool-note" id="importHint">Load a PDF, align it to the grid, trace the simplified footprint and openings, then send the template to the simulator.</div>
+        <div class="add-row">
+          <button class="btn" onclick="loadBundledSample()" style="flex:1">Load Sample PDF</button>
+          <button class="btn" onclick="triggerPdfUpload()" style="flex:1">Upload PDF</button>
+        </div>
+        <div class="field compact">
+          <label>Template</label>
+          <input id="templateName" type="text" value="Imported Geometry Template">
+        </div>
+        <div class="field">
+          <label>Page</label>
+          <div class="add-row" style="margin-bottom:0">
+            <button class="btn" onclick="changePdfPage(-1)" style="flex:1">Prev</button>
+            <button class="btn" onclick="changePdfPage(1)" style="flex:1">Next</button>
+          </div>
+          <input id="pageNumber" type="number" min="1" value="1" onchange="goToPdfPage(+this.value)">
+        </div>
+        <div class="muted" id="pdfMeta">No PDF loaded yet. Bundled sample may require serving the repo over HTTP; file upload always works.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hdr">Grid & Alignment</div>
+      <div class="panel-body">
+        <div class="field compact">
+          <label>Cols</label>
+          <input id="gridCols" type="number" min="4" max="120" value="32">
+        </div>
+        <div class="field compact">
+          <label>Rows</label>
+          <input id="gridRows" type="number" min="4" max="120" value="24">
+        </div>
+        <div class="field compact">
+          <label>Cell m</label>
+          <input id="gridCellSize" type="number" min="0.05" max="20" step="0.05" value="1.0">
+        </div>
+        <div class="add-row">
+          <button class="btn" onclick="applyGridSettings()" style="flex:1">Apply Grid</button>
+          <button class="btn" onclick="clearGeometry()" style="flex:1">Clear Geometry</button>
+        </div>
+        <hr style="margin:8px 0;border:none;border-top:1px solid #e8e4dc">
+        <div class="field">
+          <label>PDF Opacity</label>
+          <input id="pdfOpacity" type="range" min="0" max="1" step="0.05" value="0.55" oninput="updatePdfView('opacity',+this.value);this.nextElementSibling.value=this.value">
+          <input type="number" min="0" max="1" step="0.05" value="0.55" onchange="updatePdfView('opacity',+this.value);this.previousElementSibling.value=this.value">
+        </div>
+        <div class="field">
+          <label>PDF Zoom</label>
+          <input id="pdfZoom" type="range" min="0.1" max="3" step="0.01" value="1" oninput="updatePdfView('zoom',+this.value);this.nextElementSibling.value=this.value">
+          <input type="number" min="0.1" max="3" step="0.01" value="1" onchange="updatePdfView('zoom',+this.value);this.previousElementSibling.value=this.value">
+        </div>
+        <div class="field compact">
+          <label>Offset X</label>
+          <input id="pdfOffsetX" type="number" step="1" value="0" onchange="updatePdfView('offsetX',+this.value)">
+        </div>
+        <div class="field compact">
+          <label>Offset Y</label>
+          <input id="pdfOffsetY" type="number" step="1" value="0" onchange="updatePdfView('offsetY',+this.value)">
+        </div>
+        <div class="add-row">
+          <button class="btn" onclick="fitPdfToCanvas()" style="flex:1">Fit PDF</button>
+          <button class="btn" onclick="resetPdfAlignment()" style="flex:1">Reset Align</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hdr">Tools</div>
+      <div class="panel-body">
+        <div class="tool-note" id="toolHint">Paint occupiable floor cells first. Then add partitions and openings to create enclosed rooms.</div>
+        <div class="toolbar-row">
+          <button class="toolbar-btn active" data-tool="select">Select</button>
+          <button class="toolbar-btn" data-tool="floor">Floor</button>
+          <button class="toolbar-btn" data-tool="wall">Wall</button>
+          <button class="toolbar-btn" data-tool="window">Window</button>
+          <button class="toolbar-btn" data-tool="door">Door</button>
+          <button class="toolbar-btn" data-tool="exit">Exit</button>
+          <button class="toolbar-btn" data-tool="erase">Erase</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hdr">Export</div>
+      <div class="panel-body">
+        <div class="add-row">
+          <button class="btn" onclick="downloadTemplate()" style="flex:1">Download Template</button>
+          <button class="btn btn-a" onclick="sendToSimulator()" style="flex:1">Send To Simulator</button>
+        </div>
+        <div class="muted">Templates are JSON payloads compatible with the simulator's new template import path.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="canvas-wrap" id="canvasWrap"><canvas id="importCanvas"></canvas></div>
+  </div>
+
+  <div class="sidebar-r">
+    <div class="panel">
+      <div class="panel-hdr">Geometry Stats</div>
+      <div class="panel-body">
+        <div class="stat-grid" id="statsGrid"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hdr">Rooms <span id="roomCount">(0)</span></div>
+      <div class="panel-body">
+        <div id="roomList"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="roomPanel" style="display:none">
+      <div class="panel-hdr">Room: <span id="roomTitle">-</span></div>
+      <div class="panel-body" id="roomBody"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hdr">Workflow</div>
+      <div class="panel-body">
+        <div class="muted">
+          1. Load or upload a PDF.
+          <br>2. Fit and align the PDF under the grid.
+          <br>3. Trace active floor cells.
+          <br>4. Add partitions, then windows, doors, and exits.
+          <br>5. Name rooms if needed.
+          <br>6. Download the template or send it directly to the simulator.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="status-bar">
+  <span id="statusL">Ready</span>
+  <span id="statusR">Grid: 32x24 · 1.0 m/cell</span>
+</div>
+<input id="pdfInput" type="file" accept="application/pdf" style="display:none">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+const STAGED_TEMPLATE_KEY = 'thermBAL-staged-geometry-template-v1';
+const DEFAULT_ENV = { air_temp:24, mean_radiant_temp:24, humidity:50, air_velocity:0.1, lux:300, noise_db:40 };
+const DEFAULT_GRID = { cols:32, rows:24, cellSizeM:1.0 };
+const CELL = 30;
+const ROOM_COLORS = [
+  'rgba(74,127,181,0.12)','rgba(90,158,111,0.12)','rgba(192,57,43,0.10)',
+  'rgba(230,126,34,0.10)','rgba(142,68,173,0.10)','rgba(212,172,13,0.10)',
+  'rgba(52,152,219,0.10)','rgba(46,204,113,0.10)'
+];
+
+const TOOL_HINTS = {
+  select:'Select rooms to rename them and inspect the traced zoning.',
+  floor:'Paint occupiable floor cells that define the simplified building footprint.',
+  wall:'Draw partition walls on grid edges to create enclosed rooms.',
+  window:'Place windows on traced wall edges.',
+  door:'Place door openings on traced wall edges.',
+  exit:'Place exit openings on exterior wall edges.',
+  erase:'Erase traced walls or wall features. Use Floor to remove footprint cells.'
+};
+
+let COLS = DEFAULT_GRID.cols;
+let ROWS = DEFAULT_GRID.rows;
+let CELL_M = DEFAULT_GRID.cellSizeM;
+
+let activeCells = new Set();
+let hWalls = [];
+let vWalls = [];
+let wallFeatures = [];
+let rooms = [];
+let selectedRoom = null;
+
+let currentTool = 'select';
+let isPaintingFloor = false;
+let floorDrawValue = true;
+let isDrawingWall = false;
+let wallDrawValue = true;
+let hoverCell = null;
+let hoverEdge = null;
+let hoverValid = false;
+let statusNote = '';
+let statusTimer = null;
+
+let pdfDoc = null;
+let pdfPageNum = 1;
+let pdfPageCount = 0;
+let pdfSourceName = '';
+let pdfCanvas = null;
+let pdfView = { opacity:0.55, zoom:1, offsetX:0, offsetY:0 };
+
+const canvas = document.getElementById('importCanvas');
+const canvasWrap = document.getElementById('canvasWrap');
+const ctx = canvas.getContext('2d');
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function roundNum(value, digits = 2) {
+  if(!Number.isFinite(value)) return value;
+  const factor = Math.pow(10, digits);
+  return Math.round(value * factor) / factor;
+}
+
+function cloneEnv() {
+  return { ...DEFAULT_ENV };
+}
+
+function configureGrid(cols, rows, cellSizeM = DEFAULT_GRID.cellSizeM) {
+  COLS = Math.max(4, Math.round(cols));
+  ROWS = Math.max(4, Math.round(rows));
+  CELL_M = Number.isFinite(cellSizeM) && cellSizeM > 0 ? cellSizeM : DEFAULT_GRID.cellSizeM;
+}
+
+function cellKey(x, y) {
+  return x + ',' + y;
+}
+
+function parseCellKey(key) {
+  return key.split(',').map(Number);
+}
+
+function sameCell(a, b) {
+  return !!a && !!b && a[0] === b[0] && a[1] === b[1];
+}
+
+function edgeKey(edge) {
+  return edge.orient + ':' + edge.r + ':' + edge.c;
+}
+
+function sameEdge(a, b) {
+  return !!a && !!b && a.orient === b.orient && a.r === b.r && a.c === b.c;
+}
+
+function canMove(x, y) {
+  return x >= 0 && x < COLS && y >= 0 && y < ROWS;
+}
+
+function isCellActive(x, y) {
+  return activeCells.has(cellKey(x, y));
+}
+
+function setStatus(message, flash = false) {
+  statusNote = message;
+  updateStatus();
+  if(!flash) return;
+  if(statusTimer) clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => {
+    statusNote = '';
+    updateStatus();
+  }, 2800);
+}
+
+function initWalls() {
+  hWalls = Array.from({ length: ROWS + 1 }, () => Array(COLS).fill(false));
+  vWalls = Array.from({ length: ROWS }, () => Array(COLS + 1).fill(false));
+  wallFeatures = [];
+}
+
+function clearGeometry() {
+  activeCells = new Set();
+  rooms = [];
+  selectedRoom = null;
+  hoverCell = null;
+  hoverEdge = null;
+  hoverValid = false;
+  initWalls();
+  update();
+}
+
+function setCellActive(x, y, active) {
+  if(!canMove(x, y)) return false;
+  const key = cellKey(x, y);
+  const had = activeCells.has(key);
+  if(active) activeCells.add(key);
+  else activeCells.delete(key);
+  return had !== active;
+}
+
+function adjacentCellsForEdge(edge) {
+  if(edge.orient === 'h') return [[edge.c, edge.r - 1], [edge.c, edge.r]].filter(([x, y]) => canMove(x, y));
+  return [[edge.c - 1, edge.r], [edge.c, edge.r]].filter(([x, y]) => canMove(x, y));
+}
+
+function edgeTouchesActiveCell(edge) {
+  return adjacentCellsForEdge(edge).some(([x, y]) => isCellActive(x, y));
+}
+
+function edgeHasWall(edge) {
+  if(edge.orient === 'h') return !!(hWalls[edge.r] && hWalls[edge.r][edge.c]);
+  return !!(vWalls[edge.r] && vWalls[edge.r][edge.c]);
+}
+
+function featureAt(edge) {
+  return wallFeatures.find(feature => sameEdge(feature, edge)) || null;
+}
+
+function openingAt(edge) {
+  const feature = featureAt(edge);
+  return feature && (feature.type === 'door' || feature.type === 'exit') ? feature : null;
+}
+
+function isExteriorEdge(edge) {
+  return adjacentCellsForEdge(edge).filter(([x, y]) => isCellActive(x, y)).length === 1;
+}
+
+function setEdgeWall(edge, value) {
+  if(edge.orient === 'h') {
+    if(edge.r < 0 || edge.r > ROWS || edge.c < 0 || edge.c >= COLS) return false;
+    if(hWalls[edge.r][edge.c] === value) return false;
+    hWalls[edge.r][edge.c] = value;
+    return true;
+  }
+  if(edge.r < 0 || edge.r >= ROWS || edge.c < 0 || edge.c > COLS) return false;
+  if(vWalls[edge.r][edge.c] === value) return false;
+  vWalls[edge.r][edge.c] = value;
+  return true;
+}
+
+function removeFeatureAt(edge) {
+  const before = wallFeatures.length;
+  wallFeatures = wallFeatures.filter(feature => !(feature.orient === edge.orient && feature.r === edge.r && feature.c === edge.c));
+  return before !== wallFeatures.length;
+}
+
+function cleanupFeatures() {
+  wallFeatures = wallFeatures.filter(feature => edgeHasWall(feature) && edgeTouchesActiveCell(feature));
+}
+
+function wallBetween(x1, y1, x2, y2) {
+  if(x1 === x2) {
+    const wr = Math.max(y1, y2);
+    return hWalls[wr] && hWalls[wr][x1];
+  }
+  if(y1 === y2) {
+    const wc = Math.max(x1, x2);
+    return vWalls[y1] && vWalls[y1][wc];
+  }
+  return true;
+}
+
+function detectRooms() {
+  const visited = new Set();
+  const oldRooms = rooms.slice();
+  const newRooms = [];
+  let roomIdx = 0;
+
+  for(let y = 0; y < ROWS; y++) {
+    for(let x = 0; x < COLS; x++) {
+      const startKey = cellKey(x, y);
+      if(!isCellActive(x, y) || visited.has(startKey)) continue;
+
+      const cells = new Set();
+      const queue = [[x, y]];
+      visited.add(startKey);
+
+      while(queue.length) {
+        const [cx, cy] = queue.shift();
+        cells.add(cellKey(cx, cy));
+        for(const [nx, ny] of [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]) {
+          const nextKey = cellKey(nx, ny);
+          if(!canMove(nx, ny) || !isCellActive(nx, ny) || visited.has(nextKey)) continue;
+          if(wallBetween(cx, cy, nx, ny)) continue;
+          visited.add(nextKey);
+          queue.push([nx, ny]);
+        }
+      }
+
+      let bestMatch = null;
+      let bestOverlap = 0;
+      for(const oldRoom of oldRooms) {
+        let overlap = 0;
+        for(const key of cells) if(oldRoom.cells.has(key)) overlap++;
+        if(overlap > bestOverlap) {
+          bestOverlap = overlap;
+          bestMatch = oldRoom;
+        }
+      }
+
+      newRooms.push({
+        id:'room_' + roomIdx,
+        name: bestMatch && bestOverlap > 0 ? bestMatch.name : 'Room ' + String.fromCharCode(65 + (roomIdx % 26)),
+        cells,
+        env: bestMatch && bestOverlap > 0 ? { ...bestMatch.env } : cloneEnv(),
+        ceilH: bestMatch && bestOverlap > 0 ? bestMatch.ceilH : 2.8,
+        colorIdx: roomIdx % ROOM_COLORS.length
+      });
+      roomIdx++;
+    }
+  }
+
+  rooms = newRooms;
+  if(selectedRoom && !rooms.some(room => room.id === selectedRoom)) selectedRoom = null;
+}
+
+function roomAt(x, y) {
+  if(!isCellActive(x, y)) return null;
+  const key = cellKey(x, y);
+  return rooms.find(room => room.cells.has(key)) || null;
+}
+
+function serializeRooms() {
+  return rooms.map(room => ({
+    id: room.id,
+    name: room.name,
+    cells: [...room.cells].map(parseCellKey),
+    env: { ...room.env },
+    ceilH: room.ceilH
+  }));
+}
+
+function buildTemplatePayload() {
+  return {
+    meta: {
+      exported_at: new Date().toISOString(),
+      mode: 'geometry_template',
+      name: document.getElementById('templateName').value.trim() || 'Imported Geometry Template',
+      grid_cols: COLS,
+      grid_rows: ROWS,
+      cell_size_m: CELL_M,
+      source_pdf: pdfSourceName || null,
+      pdf_page: pdfDoc ? pdfPageNum : null
+    },
+    pdf_reference: pdfDoc ? {
+      source_name: pdfSourceName || null,
+      page: pdfPageNum,
+      opacity: pdfView.opacity,
+      zoom: pdfView.zoom,
+      offset_x: pdfView.offsetX,
+      offset_y: pdfView.offsetY
+    } : null,
+    active_cells: [...activeCells].map(parseCellKey),
+    walls: {
+      horizontal: hWalls.map(row => row.slice()),
+      vertical: vWalls.map(row => row.slice())
+    },
+    features: wallFeatures.map(feature => ({ ...feature })),
+    rooms: serializeRooms()
+  };
+}
+
+function downloadJSON(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function downloadTemplate() {
+  downloadJSON('thermBAL-geometry-template.json', buildTemplatePayload());
+  setStatus('Downloaded geometry template.', true);
+}
+
+function sendToSimulator() {
+  try {
+    localStorage.setItem(STAGED_TEMPLATE_KEY, JSON.stringify(buildTemplatePayload()));
+    window.location.href = 'simulator.html?import=staged';
+  } catch (err) {
+    console.error(err);
+    setStatus('Could not stage template for simulator. Download JSON instead.', true);
+  }
+}
+
+function setTool(tool) {
+  currentTool = tool;
+  hoverCell = null;
+  hoverEdge = null;
+  hoverValid = false;
+  document.querySelectorAll('.toolbar-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tool === tool);
+  });
+  document.getElementById('toolHint').textContent = TOOL_HINTS[tool] || TOOL_HINTS.select;
+  canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair';
+  updateStatus();
+  render();
+}
+
+function resizeCanvas() {
+  canvas.width = COLS * CELL + 1;
+  canvas.height = ROWS * CELL + 1;
+}
+
+function layoutCanvas() {
+  const padding = 32;
+  const availW = Math.max(1, canvasWrap.clientWidth - padding);
+  const availH = Math.max(1, canvasWrap.clientHeight - padding);
+  const scale = Math.min(availW / canvas.width, availH / canvas.height, 1);
+  canvas.style.width = Math.round(canvas.width * scale) + 'px';
+  canvas.style.height = Math.round(canvas.height * scale) + 'px';
+}
+
+function drawEdgeSegment(edge, startFrac = 0, endFrac = 1) {
+  if(edge.orient === 'h') {
+    const y = edge.r * CELL;
+    const x1 = edge.c * CELL + startFrac * CELL;
+    const x2 = edge.c * CELL + endFrac * CELL;
+    ctx.beginPath();
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+    ctx.stroke();
+    return;
+  }
+  const x = edge.c * CELL;
+  const y1 = edge.r * CELL + startFrac * CELL;
+  const y2 = edge.r * CELL + endFrac * CELL;
+  ctx.beginPath();
+  ctx.moveTo(x, y1);
+  ctx.lineTo(x, y2);
+  ctx.stroke();
+}
+
+function drawWallEdge(edge) {
+  if(openingAt(edge)) {
+    drawEdgeSegment(edge, 0, 0.24);
+    drawEdgeSegment(edge, 0.76, 1);
+    return;
+  }
+  drawEdgeSegment(edge, 0, 1);
+}
+
+function drawOpeningFeature(feature) {
+  const color = feature.type === 'exit' ? '#27ae60' : '#8b6914';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = feature.type === 'exit' ? 4 : 3;
+  if(feature.orient === 'h') {
+    const y = feature.r * CELL;
+    ctx.beginPath();
+    ctx.moveTo(feature.c * CELL + 9, y);
+    ctx.lineTo((feature.c + 1) * CELL - 9, y);
+    ctx.stroke();
+    return;
+  }
+  const x = feature.c * CELL;
+  ctx.beginPath();
+  ctx.moveTo(x, feature.r * CELL + 9);
+  ctx.lineTo(x, (feature.r + 1) * CELL - 9);
+  ctx.stroke();
+}
+
+function drawHoverCellOverlay(cell) {
+  const [x, y] = cell;
+  const active = isCellActive(x, y);
+  ctx.fillStyle = currentTool === 'floor'
+    ? (active ? 'rgba(192,57,43,0.12)' : 'rgba(39,174,96,0.16)')
+    : active ? 'rgba(139,115,85,0.10)' : 'rgba(123,115,104,0.08)';
+  ctx.fillRect(x * CELL + 2, y * CELL + 2, CELL - 4, CELL - 4);
+  ctx.strokeStyle = active ? 'rgba(139,115,85,0.55)' : 'rgba(39,174,96,0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x * CELL + 2, y * CELL + 2, CELL - 4, CELL - 4);
+}
+
+function drawHoverEdgeOverlay(edge, valid, tool) {
+  const colorMap = { wall:'#2d2d2d', window:'#4a7fb5', door:'#8b6914', exit:'#27ae60', erase:'#c0392b' };
+  ctx.save();
+  ctx.strokeStyle = valid ? (colorMap[tool] || '#8b7355') : 'rgba(192,57,43,0.85)';
+  ctx.lineWidth = valid ? 6 : 4;
+  ctx.lineCap = 'round';
+  ctx.setLineDash(tool === 'erase' ? [4,3] : []);
+  drawEdgeSegment(edge, 0.08, 0.92);
+  ctx.restore();
+}
+
+function drawPdfBackground() {
+  if(!pdfCanvas) return;
+  ctx.save();
+  ctx.globalAlpha = pdfView.opacity;
+  ctx.drawImage(
+    pdfCanvas,
+    pdfView.offsetX,
+    pdfView.offsetY,
+    pdfCanvas.width * pdfView.zoom,
+    pdfCanvas.height * pdfView.zoom
+  );
+  ctx.restore();
+}
+
+function render() {
+  resizeCanvas();
+  layoutCanvas();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#f4f0e9';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawPdfBackground();
+
+  for(let y = 0; y < ROWS; y++) {
+    for(let x = 0; x < COLS; x++) {
+      if(isCellActive(x, y)) {
+        ctx.fillStyle = '#fffdfa';
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+  }
+
+  for(const room of rooms) {
+    ctx.fillStyle = ROOM_COLORS[room.colorIdx];
+    for(const key of room.cells) {
+      const [x, y] = parseCellKey(key);
+      ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+    }
+  }
+
+  if(hoverCell && (currentTool === 'select' || currentTool === 'floor')) drawHoverCellOverlay(hoverCell);
+
+  ctx.strokeStyle = '#ddd7cc';
+  ctx.lineWidth = 0.5;
+  for(let x = 0; x <= COLS; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * CELL, 0);
+    ctx.lineTo(x * CELL, ROWS * CELL);
+    ctx.stroke();
+  }
+  for(let y = 0; y <= ROWS; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * CELL);
+    ctx.lineTo(COLS * CELL, y * CELL);
+    ctx.stroke();
+  }
+
+  ctx.font = '10px "SF Mono","Fira Code",monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for(const room of rooms) {
+    let sx = 0, sy = 0, count = 0;
+    for(const key of room.cells) {
+      const [x, y] = parseCellKey(key);
+      sx += x;
+      sy += y;
+      count++;
+    }
+    if(count > 0) {
+      ctx.fillStyle = 'rgba(45,45,45,0.48)';
+      ctx.fillText(room.name, (sx / count + 0.5) * CELL, (sy / count + 0.5) * CELL);
+    }
+  }
+
+  ctx.strokeStyle = '#2d2d2d';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  for(let r = 0; r <= ROWS; r++) for(let c = 0; c < COLS; c++) if(hWalls[r][c]) drawWallEdge({ orient:'h', r, c });
+  for(let r = 0; r < ROWS; r++) for(let c = 0; c <= COLS; c++) if(vWalls[r][c]) drawWallEdge({ orient:'v', r, c });
+
+  for(const feature of wallFeatures) {
+    if(feature.type === 'door' || feature.type === 'exit') {
+      drawOpeningFeature(feature);
+      continue;
+    }
+    ctx.strokeStyle = '#4a7fb5';
+    ctx.lineWidth = 4;
+    if(feature.orient === 'h') {
+      const y = feature.r * CELL;
+      ctx.beginPath();
+      ctx.moveTo(feature.c * CELL + 2, y);
+      ctx.lineTo((feature.c + 1) * CELL - 2, y);
+      ctx.stroke();
+    } else {
+      const x = feature.c * CELL;
+      ctx.beginPath();
+      ctx.moveTo(x, feature.r * CELL + 2);
+      ctx.lineTo(x, (feature.r + 1) * CELL - 2);
+      ctx.stroke();
+    }
+  }
+
+  if(hoverEdge && currentTool !== 'select' && currentTool !== 'floor') drawHoverEdgeOverlay(hoverEdge, hoverValid, currentTool);
+
+  if(selectedRoom) {
+    const room = rooms.find(item => item.id === selectedRoom);
+    if(room) {
+      ctx.strokeStyle = 'rgba(139,115,85,0.65)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4,4]);
+      for(const key of room.cells) {
+        const [x, y] = parseCellKey(key);
+        ctx.strokeRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2);
+      }
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+function updateRoomList() {
+  const roomList = document.getElementById('roomList');
+  document.getElementById('roomCount').textContent = '(' + rooms.length + ')';
+  if(!rooms.length) {
+    roomList.innerHTML = '<div class="empty">No rooms detected yet. Trace floor and add partitions to create enclosed zones.</div>';
+    return;
+  }
+  roomList.innerHTML = rooms.map(room =>
+    '<div class="room-item' + (room.id === selectedRoom ? ' sel' : '') + '" data-room-id="' + room.id + '">' +
+      '<div>' + room.name + '</div>' +
+      '<div class="sub">' + room.cells.size + ' cells</div>' +
+    '</div>'
+  ).join('');
+}
+
+function updateRoomPanel() {
+  const panel = document.getElementById('roomPanel');
+  if(!selectedRoom) {
+    panel.style.display = 'none';
+    return;
+  }
+  const room = rooms.find(item => item.id === selectedRoom);
+  if(!room) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  document.getElementById('roomTitle').textContent = room.name;
+  document.getElementById('roomBody').innerHTML = `
+    <div class="tool-note">${room.cells.size} cells in this detected room.</div>
+    <div class="field compact"><label>Name</label><input type="text" value="${room.name.replace(/"/g, '&quot;')}" onchange="updRoom('name',this.value)"></div>
+    <div class="field compact"><label>Ceiling m</label><input type="number" min="2" max="6" step="0.1" value="${room.ceilH}" onchange="updRoom('ceilH',+this.value)"></div>
+  `;
+}
+
+function updateStats() {
+  const counts = {
+    floor: activeCells.size,
+    rooms: rooms.length,
+    windows: wallFeatures.filter(feature => feature.type === 'window').length,
+    doors: wallFeatures.filter(feature => feature.type === 'door').length,
+    exits: wallFeatures.filter(feature => feature.type === 'exit').length
+  };
+  const rows = [
+    ['Floor cells', counts.floor],
+    ['Rooms', counts.rooms],
+    ['Windows', counts.windows],
+    ['Doors', counts.doors],
+    ['Exits', counts.exits],
+    ['PDF', pdfSourceName || '--'],
+    ['Page', pdfDoc ? pdfPageNum + '/' + pdfPageCount : '--'],
+    ['Grid', COLS + 'x' + ROWS]
+  ];
+  document.getElementById('statsGrid').innerHTML = rows.map(([label, value]) =>
+    '<div class="stat-card"><div class="label">' + label + '</div><div class="value">' + value + '</div></div>'
+  ).join('');
+}
+
+function updatePdfMeta() {
+  document.getElementById('pageNumber').value = pdfPageNum;
+  document.getElementById('pdfMeta').textContent = pdfDoc
+    ? (pdfSourceName + ' · page ' + pdfPageNum + ' of ' + pdfPageCount)
+    : 'No PDF loaded yet. Bundled sample may require serving the repo over HTTP; file upload always works.';
+}
+
+function updateStatus() {
+  document.getElementById('statusL').textContent = statusNote || ('Rooms: ' + rooms.length + ' · Tool: ' + currentTool);
+  document.getElementById('statusR').textContent = 'Grid: ' + COLS + 'x' + ROWS + ' · ' + CELL_M.toFixed(2) + ' m/cell';
+}
+
+function update() {
+  render();
+  updateRoomList();
+  updateRoomPanel();
+  updateStats();
+  updatePdfMeta();
+  updateStatus();
+}
+
+function updRoom(key, value) {
+  const room = rooms.find(item => item.id === selectedRoom);
+  if(!room) return;
+  if(key === 'name') room.name = value.trim() || room.name;
+  else if(key === 'ceilH') room.ceilH = value;
+  update();
+}
+
+function triggerPdfUpload() {
+  const input = document.getElementById('pdfInput');
+  input.value = '';
+  input.click();
+}
+
+async function loadPdfFromData(source) {
+  const task = pdfjsLib.getDocument(source);
+  pdfDoc = await task.promise;
+  pdfPageCount = pdfDoc.numPages;
+  pdfPageNum = 1;
+  await renderPdfPage();
+}
+
+async function loadBundledSample() {
+  try {
+    const response = await fetch('floor_plan/tav-floor-plan-mar-09.pdf');
+    if(!response.ok) throw new Error('HTTP ' + response.status);
+    const buffer = await response.arrayBuffer();
+    pdfSourceName = 'tav-floor-plan-mar-09.pdf';
+    await loadPdfFromData({ data: buffer });
+    setStatus('Loaded bundled sample PDF.', true);
+  } catch (err) {
+    console.error(err);
+    setStatus('Bundled sample could not be loaded here. Upload the PDF manually if needed.', true);
+  }
+}
+
+async function renderPdfPage() {
+  if(!pdfDoc) return;
+  const page = await pdfDoc.getPage(pdfPageNum);
+  const viewport = page.getViewport({ scale: 2 });
+  pdfCanvas = document.createElement('canvas');
+  pdfCanvas.width = viewport.width;
+  pdfCanvas.height = viewport.height;
+  const pdfCtx = pdfCanvas.getContext('2d');
+  await page.render({ canvasContext: pdfCtx, viewport }).promise;
+  fitPdfToCanvas();
+  update();
+}
+
+function resetPdfAlignment() {
+  pdfView.opacity = 0.55;
+  pdfView.zoom = 1;
+  pdfView.offsetX = 0;
+  pdfView.offsetY = 0;
+  syncPdfControls();
+  update();
+}
+
+function fitPdfToCanvas() {
+  if(!pdfCanvas) return;
+  const scale = Math.min(canvas.width / pdfCanvas.width, canvas.height / pdfCanvas.height);
+  pdfView.zoom = scale;
+  pdfView.offsetX = (canvas.width - pdfCanvas.width * scale) / 2;
+  pdfView.offsetY = (canvas.height - pdfCanvas.height * scale) / 2;
+  syncPdfControls();
+  update();
+}
+
+function syncPdfControls() {
+  document.getElementById('pdfOpacity').value = pdfView.opacity;
+  document.getElementById('pdfOpacity').nextElementSibling.value = pdfView.opacity;
+  document.getElementById('pdfZoom').value = pdfView.zoom;
+  document.getElementById('pdfZoom').nextElementSibling.value = roundNum(pdfView.zoom, 2);
+  document.getElementById('pdfOffsetX').value = roundNum(pdfView.offsetX, 0);
+  document.getElementById('pdfOffsetY').value = roundNum(pdfView.offsetY, 0);
+}
+
+function updatePdfView(key, value) {
+  pdfView[key] = value;
+  update();
+}
+
+function changePdfPage(delta) {
+  if(!pdfDoc) return;
+  const next = pdfPageNum + delta;
+  if(next < 1 || next > pdfPageCount) return;
+  pdfPageNum = next;
+  renderPdfPage();
+}
+
+function goToPdfPage(pageNum) {
+  if(!pdfDoc) return;
+  const next = Math.min(pdfPageCount, Math.max(1, Math.round(pageNum)));
+  pdfPageNum = next;
+  renderPdfPage();
+}
+
+function applyGridSettings() {
+  configureGrid(
+    +document.getElementById('gridCols').value,
+    +document.getElementById('gridRows').value,
+    +document.getElementById('gridCellSize').value
+  );
+  clearGeometry();
+  fitPdfToCanvas();
+  setStatus('Applied new grid and cleared traced geometry.', true);
+}
+
+function nearestEdge(px, py) {
+  const col = px / CELL;
+  const row = py / CELL;
+  const cellX = Math.floor(col);
+  const cellY = Math.floor(row);
+  const fracX = col - cellX;
+  const fracY = row - cellY;
+  const dTop = fracY;
+  const dBottom = 1 - fracY;
+  const dLeft = fracX;
+  const dRight = 1 - fracX;
+  const minD = Math.min(dTop, dBottom, dLeft, dRight);
+  if(minD === dTop) return { orient:'h', r:cellY, c:cellX };
+  if(minD === dBottom) return { orient:'h', r:cellY + 1, c:cellX };
+  if(minD === dLeft) return { orient:'v', r:cellY, c:cellX };
+  return { orient:'v', r:cellY, c:cellX + 1 };
+}
+
+function edgePixelDistance(edge, px, py) {
+  if(edge.orient === 'h') {
+    const x1 = edge.c * CELL;
+    const x2 = (edge.c + 1) * CELL;
+    const y = edge.r * CELL;
+    const cx = Math.min(x2, Math.max(x1, px));
+    return Math.hypot(px - cx, py - y);
+  }
+  const x = edge.c * CELL;
+  const y1 = edge.r * CELL;
+  const y2 = (edge.r + 1) * CELL;
+  const cy = Math.min(y2, Math.max(y1, py));
+  return Math.hypot(px - x, py - cy);
+}
+
+function candidateEdgesAroundPoint(px, py) {
+  const col = Math.floor(px / CELL);
+  const row = Math.floor(py / CELL);
+  const map = new Map();
+  for(let dy = -1; dy <= 1; dy++) {
+    for(let dx = -1; dx <= 1; dx++) {
+      const x = col + dx;
+      const y = row + dy;
+      if(!canMove(x, y)) continue;
+      for(const edge of [
+        { orient:'h', r:y, c:x },
+        { orient:'h', r:y + 1, c:x },
+        { orient:'v', r:y, c:x },
+        { orient:'v', r:y, c:x + 1 }
+      ]) map.set(edgeKey(edge), edge);
+    }
+  }
+  return [...map.values()];
+}
+
+function isEdgeActionValid(edge, tool) {
+  if(!edge) return false;
+  const touchesFloor = edgeTouchesActiveCell(edge);
+  if(tool === 'wall') return touchesFloor;
+  if(tool === 'erase') return touchesFloor && (edgeHasWall(edge) || !!featureAt(edge));
+  if(tool === 'window' || tool === 'door') return touchesFloor && edgeHasWall(edge);
+  if(tool === 'exit') return touchesFloor && edgeHasWall(edge) && isExteriorEdge(edge);
+  return false;
+}
+
+function resolveEdgeForTool(px, py, tool) {
+  let candidates = candidateEdgesAroundPoint(px, py).filter(edge => edgeTouchesActiveCell(edge));
+  if(tool === 'wall') {
+    if(!candidates.length) return nearestEdge(px, py);
+    return candidates.sort((a, b) => edgePixelDistance(a, px, py) - edgePixelDistance(b, px, py))[0];
+  }
+  if(tool === 'erase') {
+    const editable = candidates.filter(edge => edgeHasWall(edge) || featureAt(edge));
+    if(editable.length) candidates = editable;
+  }
+  if(tool === 'window' || tool === 'door') {
+    const walled = candidates.filter(edge => edgeHasWall(edge));
+    if(walled.length) candidates = walled;
+  }
+  if(tool === 'exit') {
+    const exterior = candidates.filter(edge => edgeHasWall(edge) && isExteriorEdge(edge));
+    if(exterior.length) candidates = exterior;
+  }
+  if(!candidates.length) return nearestEdge(px, py);
+  return candidates.sort((a, b) => edgePixelDistance(a, px, py) - edgePixelDistance(b, px, py))[0];
+}
+
+function updateHoverState(px, py) {
+  const col = Math.floor(px / CELL);
+  const row = Math.floor(py / CELL);
+  let nextCell = null;
+  let nextEdge = null;
+  let nextValid = false;
+
+  if(currentTool === 'select' || currentTool === 'floor') {
+    if(canMove(col, row)) {
+      nextCell = [col, row];
+      nextValid = currentTool === 'floor' || isCellActive(col, row);
+    }
+  } else {
+    nextEdge = resolveEdgeForTool(px, py, currentTool);
+    nextValid = isEdgeActionValid(nextEdge, currentTool);
+  }
+
+  const changed = !sameCell(hoverCell, nextCell) || !sameEdge(hoverEdge, nextEdge) || hoverValid !== nextValid;
+  hoverCell = nextCell;
+  hoverEdge = nextEdge;
+  hoverValid = nextValid;
+  return changed;
+}
+
+function getGridPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+  const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+  const px = (event.clientX - rect.left) * scaleX;
+  const py = (event.clientY - rect.top) * scaleY;
+  return { px, py, col: Math.floor(px / CELL), row: Math.floor(py / CELL) };
+}
+
+document.querySelectorAll('.toolbar-btn').forEach(btn => {
+  btn.addEventListener('click', () => setTool(btn.dataset.tool));
+});
+
+document.getElementById('roomList').addEventListener('click', event => {
+  const item = event.target.closest('[data-room-id]');
+  if(item) {
+    selectedRoom = item.dataset.roomId;
+    update();
+  }
+});
+
+document.getElementById('pdfInput').addEventListener('change', event => {
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      pdfSourceName = file.name;
+      await loadPdfFromData({ data: reader.result });
+      setStatus('Loaded uploaded PDF.', true);
+    } catch (err) {
+      console.error(err);
+      setStatus('PDF upload failed.', true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+canvas.addEventListener('mousedown', event => {
+  const { px, py, col, row } = getGridPos(event);
+  if(currentTool === 'select') {
+    const room = canMove(col, row) ? roomAt(col, row) : null;
+    selectedRoom = room ? room.id : null;
+    update();
+    return;
+  }
+
+  if(currentTool === 'floor') {
+    if(!canMove(col, row)) return;
+    floorDrawValue = !isCellActive(col, row);
+    if(setCellActive(col, row, floorDrawValue)) {
+      cleanupFeatures();
+      detectRooms();
+      isPaintingFloor = true;
+      update();
+    }
+    return;
+  }
+
+  const edge = resolveEdgeForTool(px, py, currentTool);
+  if(currentTool === 'wall') {
+    if(!edgeTouchesActiveCell(edge)) return;
+    wallDrawValue = !edgeHasWall(edge);
+    if(setEdgeWall(edge, wallDrawValue)) {
+      cleanupFeatures();
+      detectRooms();
+      update();
+    }
+    isDrawingWall = true;
+    return;
+  }
+
+  if(currentTool === 'erase') {
+    if(!edgeTouchesActiveCell(edge)) return;
+    let changed = removeFeatureAt(edge);
+    changed = setEdgeWall(edge, false) || changed;
+    if(changed) {
+      cleanupFeatures();
+      detectRooms();
+      update();
+    }
+    isDrawingWall = true;
+    wallDrawValue = false;
+    return;
+  }
+
+  if(['window','door','exit'].includes(currentTool)) {
+    if(!isEdgeActionValid(edge, currentTool)) return;
+    removeFeatureAt(edge);
+    wallFeatures.push({ type: currentTool, orient: edge.orient, r: edge.r, c: edge.c });
+    update();
+  }
+});
+
+canvas.addEventListener('mousemove', event => {
+  const { px, py, col, row } = getGridPos(event);
+  let hoverChanged = updateHoverState(px, py);
+
+  if(isPaintingFloor && currentTool === 'floor') {
+    if(canMove(col, row) && setCellActive(col, row, floorDrawValue)) {
+      cleanupFeatures();
+      detectRooms();
+      update();
+      hoverChanged = false;
+    } else if(hoverChanged) render();
+    return;
+  }
+
+  if(isDrawingWall && (currentTool === 'wall' || currentTool === 'erase')) {
+    const edge = resolveEdgeForTool(px, py, currentTool);
+    let changed = false;
+    if(currentTool === 'erase') changed = removeFeatureAt(edge) || changed;
+    if(edgeTouchesActiveCell(edge)) changed = setEdgeWall(edge, wallDrawValue) || changed;
+    if(changed) {
+      cleanupFeatures();
+      detectRooms();
+      update();
+      hoverChanged = false;
+    } else if(hoverChanged) render();
+    return;
+  }
+
+  if(hoverChanged) render();
+});
+
+canvas.addEventListener('mouseup', () => {
+  isPaintingFloor = false;
+  isDrawingWall = false;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  isPaintingFloor = false;
+  isDrawingWall = false;
+  hoverCell = null;
+  hoverEdge = null;
+  hoverValid = false;
+  render();
+});
+
+window.addEventListener('resize', () => {
+  layoutCanvas();
+});
+
+configureGrid(DEFAULT_GRID.cols, DEFAULT_GRID.rows, DEFAULT_GRID.cellSizeM);
+initWalls();
+syncPdfControls();
+update();
+</script>
+</body>
+</html>

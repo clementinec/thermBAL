@@ -115,6 +115,10 @@ canvas#grid{display:block;cursor:default;box-shadow:0 12px 24px rgba(45,45,45,0.
       <div class="panel-hdr">Plan</div>
       <div class="panel-body">
         <div class="stat-grid" id="planStats"></div>
+        <div class="add-row">
+          <button class="btn" onclick="triggerTemplateImport()" style="flex:1">Load Template</button>
+          <button class="btn" onclick="openGeometryImporter()" style="flex:1">Import Geometry</button>
+        </div>
         <div class="add-row" style="margin-top:6px">
           <button class="btn" onclick="exportPlanState()" style="flex:1">Export State</button>
           <button class="btn" onclick="exportSnapshots()" style="flex:1">Export Snapshots</button>
@@ -204,6 +208,7 @@ canvas#grid{display:block;cursor:default;box-shadow:0 12px 24px rgba(45,45,45,0.
   <span id="statusL">Ready</span>
   <span id="statusR">Grid: 20x15 · 1.0 m/cell</span>
 </div>
+<input id="templateInput" type="file" accept=".json,application/json" style="display:none">
 
 <script>
 const MET_TO_WM2 = 58.15;
@@ -212,10 +217,12 @@ const SIGMA = 5.67e-8;
 const EPSILON = 0.95;
 const F_EFF = 0.72;
 
-const COLS = 20;
-const ROWS = 15;
+const DEFAULT_GRID = { cols:20, rows:15, cellSizeM:1.0 };
+const STAGED_TEMPLATE_KEY = 'thermBAL-staged-geometry-template-v1';
+let COLS = DEFAULT_GRID.cols;
+let ROWS = DEFAULT_GRID.rows;
 const CELL = 32;
-const CELL_M = 1.0;
+let CELL_M = DEFAULT_GRID.cellSizeM;
 
 const ROOM_COLORS = [
   'rgba(74,127,181,0.12)','rgba(90,158,111,0.12)','rgba(192,57,43,0.10)',
@@ -282,6 +289,14 @@ function roundNum(value, digits = 2) {
 
 function cloneEnv() {
   return { ...DEFAULT_ENV };
+}
+
+function configureGrid(cols, rows, cellSizeM = DEFAULT_GRID.cellSizeM) {
+  const nextCols = Math.max(4, Math.round(cols));
+  const nextRows = Math.max(4, Math.round(rows));
+  COLS = nextCols;
+  ROWS = nextRows;
+  CELL_M = Number.isFinite(cellSizeM) && cellSizeM > 0 ? cellSizeM : DEFAULT_GRID.cellSizeM;
 }
 
 function cellKey(x, y) {
@@ -1863,6 +1878,7 @@ function removeSelAgent() {
 }
 
 function loadDefaultPlan() {
+  configureGrid(DEFAULT_GRID.cols, DEFAULT_GRID.rows, DEFAULT_GRID.cellSizeM);
   initWalls();
   activeCells = new Set();
   activateRect(0, 0, 12, 10);
@@ -1967,6 +1983,129 @@ function serializeAgents() {
   return agents.map(cloneAgent);
 }
 
+function buildPlanPayload({ includeAgents = true, mode = 'simulator_state', source = null } = {}) {
+  const payload = {
+    meta: {
+      exported_at: new Date().toISOString(),
+      mode,
+      grid_cols: COLS,
+      grid_rows: ROWS,
+      cell_size_m: CELL_M
+    },
+    active_cells: [...activeCells].map(parseCellKey),
+    walls: {
+      horizontal: hWalls.map(row => row.slice()),
+      vertical: vWalls.map(row => row.slice())
+    },
+    features: wallFeatures.map(feature => ({ ...feature })),
+    rooms: serializeRooms()
+  };
+  if(source) payload.meta.source = source;
+  if(includeAgents) payload.agents = serializeAgents();
+  return payload;
+}
+
+function sanitizeWallMatrix(matrix, rows, cols) {
+  const out = Array.from({ length: rows }, () => Array(cols).fill(false));
+  if(!Array.isArray(matrix)) return out;
+  for(let r = 0; r < Math.min(rows, matrix.length); r++) {
+    const row = Array.isArray(matrix[r]) ? matrix[r] : [];
+    for(let c = 0; c < Math.min(cols, row.length); c++) {
+      out[r][c] = !!row[c];
+    }
+  }
+  return out;
+}
+
+function sanitizeFeatures(features) {
+  if(!Array.isArray(features)) return [];
+  return features
+    .filter(feature => feature && (feature.orient === 'h' || feature.orient === 'v'))
+    .map(feature => ({
+      type: ['window','door','exit'].includes(feature.type) ? feature.type : 'window',
+      orient: feature.orient,
+      r: Math.round(feature.r),
+      c: Math.round(feature.c)
+    }))
+    .filter(feature => {
+      if(feature.orient === 'h') return feature.r >= 0 && feature.r <= ROWS && feature.c >= 0 && feature.c < COLS;
+      return feature.r >= 0 && feature.r < ROWS && feature.c >= 0 && feature.c <= COLS;
+    });
+}
+
+function sanitizeRooms(importedRooms) {
+  if(!Array.isArray(importedRooms)) return [];
+  return importedRooms.map((room, index) => ({
+    id: room && room.id ? String(room.id) : 'room_' + index,
+    name: room && room.name ? String(room.name) : 'Room ' + String.fromCharCode(65 + (index % 26)),
+    cells: new Set(
+      Array.isArray(room && room.cells)
+        ? room.cells
+            .filter(cell => Array.isArray(cell) && cell.length >= 2)
+            .map(([x, y]) => [Math.round(x), Math.round(y)])
+            .filter(([x, y]) => canMove(x, y) && isCellActive(x, y))
+            .map(([x, y]) => cellKey(x, y))
+        : []
+    ),
+    env: { ...cloneEnv(), ...(room && room.env ? room.env : {}) },
+    ceilH: Number.isFinite(room && room.ceilH) ? room.ceilH : 2.8,
+    colorIdx: index % ROOM_COLORS.length
+  })).filter(room => room.cells.size > 0);
+}
+
+function deriveNextAgentNumber() {
+  let maxNum = 0;
+  for(const agent of agents) {
+    const match = String(agent.id).match(/^persona_(\d+)$/);
+    if(match) maxNum = Math.max(maxNum, Number(match[1]));
+  }
+  nextAgentNum = maxNum + 1 || 1;
+}
+
+function loadPlanTemplate(payload, { staged = false } = {}) {
+  if(!payload || typeof payload !== 'object') throw new Error('Invalid plan template.');
+  const meta = payload.meta || {};
+  const nextCols = meta.grid_cols ?? payload.grid_cols ?? DEFAULT_GRID.cols;
+  const nextRows = meta.grid_rows ?? payload.grid_rows ?? DEFAULT_GRID.rows;
+  const nextCellSize = meta.cell_size_m ?? payload.cell_size_m ?? DEFAULT_GRID.cellSizeM;
+
+  configureGrid(nextCols, nextRows, nextCellSize);
+  initWalls();
+  activeCells = new Set();
+
+  if(Array.isArray(payload.active_cells)) {
+    for(const cell of payload.active_cells) {
+      if(Array.isArray(cell) && cell.length >= 2) {
+        const x = Math.round(cell[0]);
+        const y = Math.round(cell[1]);
+        if(canMove(x, y)) activeCells.add(cellKey(x, y));
+      }
+    }
+  }
+
+  hWalls = sanitizeWallMatrix(payload.walls && payload.walls.horizontal, ROWS + 1, COLS);
+  vWalls = sanitizeWallMatrix(payload.walls && payload.walls.vertical, ROWS, COLS + 1);
+  wallFeatures = sanitizeFeatures(payload.features);
+  rooms = sanitizeRooms(payload.rooms);
+  cleanupFeatures();
+  detectRooms();
+
+  agents = Array.isArray(payload.agents) ? payload.agents.map(cloneAgent) : [];
+  deriveNextAgentNumber();
+  selectedAgent = agents[0] ? agents[0].id : null;
+  selectedRoom = null;
+  hoverCell = null;
+  hoverEdge = null;
+  hoverValid = false;
+  hoverAgentId = null;
+
+  if(staged && typeof localStorage !== 'undefined') {
+    localStorage.removeItem(STAGED_TEMPLATE_KEY);
+  }
+
+  update();
+}
+
 function downloadJSON(filename, data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1980,22 +2119,7 @@ function downloadJSON(filename, data) {
 }
 
 function exportPlanState() {
-  const payload = {
-    meta: {
-      exported_at: new Date().toISOString(),
-      grid_cols: COLS,
-      grid_rows: ROWS,
-      cell_size_m: CELL_M
-    },
-    active_cells: [...activeCells].map(parseCellKey),
-    walls: {
-      horizontal: hWalls.map(row => row.slice()),
-      vertical: vWalls.map(row => row.slice())
-    },
-    features: wallFeatures.map(feature => ({ ...feature })),
-    rooms: serializeRooms(),
-    agents: serializeAgents()
-  };
+  const payload = buildPlanPayload({ includeAgents:true, mode:'simulator_state' });
   downloadJSON('thermBAL-plan-state.json', payload);
   flashStatus('Exported simulator state JSON.');
 }
@@ -2007,6 +2131,52 @@ function exportSnapshots() {
   };
   downloadJSON('thermBAL-snapshots.json', payload);
   flashStatus('Exported agent snapshots JSON.');
+}
+
+function triggerTemplateImport() {
+  const input = document.getElementById('templateInput');
+  if(input) {
+    input.value = '';
+    input.click();
+  }
+}
+
+function openGeometryImporter() {
+  if(typeof window !== 'undefined' && window.location) {
+    window.location.href = 'import-geometry.html';
+  }
+}
+
+function handleTemplateImportFile(event) {
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const payload = JSON.parse(String(reader.result));
+      loadPlanTemplate(payload);
+      flashStatus('Loaded geometry template.');
+    } catch (err) {
+      flashStatus('Template import failed.');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function tryLoadStagedTemplate() {
+  if(typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('import') !== 'staged') return;
+  const raw = localStorage.getItem(STAGED_TEMPLATE_KEY);
+  if(!raw) return;
+  try {
+    loadPlanTemplate(JSON.parse(raw), { staged:true });
+    flashStatus('Loaded staged geometry template.');
+  } catch (err) {
+    console.error(err);
+    flashStatus('Staged geometry import failed.');
+  }
 }
 
 function getGridPos(event) {
@@ -2060,6 +2230,8 @@ document.getElementById('agentList').addEventListener('click', event => {
   const item = event.target.closest('[data-agent-id]');
   if(item) selectAgent(item.dataset.agentId);
 });
+
+document.getElementById('templateInput').addEventListener('change', handleTemplateImportFile);
 
 canvas.addEventListener('mousedown', event => {
   const { px, py, col, row } = getGridPos(event);
@@ -2201,8 +2373,9 @@ window.addEventListener('resize', () => {
 });
 
 loadDefaultPlan();
+tryLoadStagedTemplate();
 setTool('select');
-selectedAgent = 'persona_01';
+if(!selectedAgent && agents[0]) selectedAgent = agents[0].id;
 update();
 </script>
 </body>
