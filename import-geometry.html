@@ -16,8 +16,12 @@ header span{font-size:11px;color:var(--accent)}
 .sidebar{width:310px;border-right:1px solid var(--border)}
 .sidebar-r{width:300px;border-left:1px solid var(--border)}
 .center{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px;background:radial-gradient(circle at 20% 20%, #fffdf8 0, #fffdf8 24%, #f5efe4 100%)}
+.canvas-wrap{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px;background:radial-gradient(circle at 20% 20%, #fffdf8 0, #fffdf8 24%, #f5efe4 100%)}
 canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;box-shadow:0 12px 24px rgba(45,45,45,0.08)}
+.canvas-overlay{position:absolute;inset:16px;display:flex;align-items:flex-start;justify-content:center;padding-top:20px;pointer-events:none}
+.canvas-guide{max-width:430px;padding:10px 12px;border:1px solid rgba(139,115,85,0.35);border-radius:6px;background:rgba(255,252,246,0.9);box-shadow:0 10px 20px rgba(45,45,45,0.08);backdrop-filter:blur(4px)}
+.canvas-guide strong{display:block;margin-bottom:4px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.canvas-guide p{font-size:11px;line-height:1.55;color:var(--fg)}
 .panel{margin-bottom:8px;border:1px solid var(--border);background:#fff;border-radius:4px}
 .panel-hdr{padding:6px 8px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .panel-body{padding:8px}
@@ -61,7 +65,7 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
     <div class="panel">
       <div class="panel-hdr">Source</div>
       <div class="panel-body">
-        <div class="tool-note" id="importHint">Load a PDF, align it to the grid, trace the simplified footprint and openings, then send the template to the simulator.</div>
+        <div class="tool-note" id="importHint">Load a PDF, align it to the grid, auto-detect the simplified footprint, then refine partitions and openings before sending the template to the simulator.</div>
         <div class="add-row">
           <button class="btn" onclick="loadBundledSample()" style="flex:1">Load Sample PDF</button>
           <button class="btn" onclick="triggerPdfUpload()" style="flex:1">Upload PDF</button>
@@ -124,16 +128,20 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
           <button class="btn" onclick="fitPdfToCanvas()" style="flex:1">Fit PDF</button>
           <button class="btn" onclick="resetPdfAlignment()" style="flex:1">Reset Align</button>
         </div>
+        <div class="add-row">
+          <button class="btn btn-a" onclick="autoDetectFootprint()" style="flex:1">Auto Detect Footprint</button>
+        </div>
+        <div class="muted">Uses the current PDF alignment. Replaces the traced geometry with a candidate footprint and exterior wall ring.</div>
       </div>
     </div>
 
     <div class="panel">
       <div class="panel-hdr">Tools</div>
       <div class="panel-body">
-        <div class="tool-note" id="toolHint">Paint occupiable floor cells first. Then add partitions and openings to create enclosed rooms.</div>
+        <div class="tool-note" id="toolHint">Confirm or refine the occupiable footprint first. Then add partitions and openings to create enclosed rooms.</div>
         <div class="toolbar-row">
-          <button class="toolbar-btn active" data-tool="select">Select</button>
-          <button class="toolbar-btn" data-tool="floor">Floor</button>
+          <button class="toolbar-btn" data-tool="select">Select</button>
+          <button class="toolbar-btn active" data-tool="floor">Footprint</button>
           <button class="toolbar-btn" data-tool="wall">Wall</button>
           <button class="toolbar-btn" data-tool="window">Window</button>
           <button class="toolbar-btn" data-tool="door">Door</button>
@@ -156,7 +164,15 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
   </div>
 
   <div class="center">
-    <div class="canvas-wrap" id="canvasWrap"><canvas id="importCanvas"></canvas></div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="importCanvas"></canvas>
+      <div class="canvas-overlay" id="emptyOverlay">
+        <div class="canvas-guide">
+          <strong id="emptyOverlayTitle">Define Footprint First</strong>
+          <p id="emptyOverlayBody">Use Auto Detect Footprint for a first pass, then refine the occupiable area with the Footprint tool. Walls, windows, doors, and exits only become usable after that footprint exists.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="sidebar-r">
@@ -185,8 +201,8 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
         <div class="muted">
           1. Load or upload a PDF.
           <br>2. Fit and align the PDF under the grid.
-          <br>3. Trace active floor cells.
-          <br>4. Add partitions, then windows, doors, and exits.
+          <br>3. Auto-detect the footprint, then confirm or refine it.
+          <br>4. Add interior partitions, then windows, doors, and exits.
           <br>5. Name rooms if needed.
           <br>6. Download the template or send it directly to the simulator.
         </div>
@@ -211,15 +227,21 @@ const ROOM_COLORS = [
   'rgba(230,126,34,0.10)','rgba(142,68,173,0.10)','rgba(212,172,13,0.10)',
   'rgba(52,152,219,0.10)','rgba(46,204,113,0.10)'
 ];
+const FOOTPRINT_DETECT = {
+  maxDim: 1400,
+  luminanceThreshold: 236,
+  minCellFill: 0.14,
+  minCellPixels: 8
+};
 
 const TOOL_HINTS = {
   select:'Select rooms to rename them and inspect the traced zoning.',
-  floor:'Paint occupiable floor cells that define the simplified building footprint.',
-  wall:'Draw partition walls on grid edges to create enclosed rooms.',
+  floor:'Confirm or refine the occupiable footprint. Drag across empty cells to add them and across active cells to erase.',
+  wall:'Draw partition walls on grid edges to create enclosed rooms. Exterior walls are auto-generated from the footprint.',
   window:'Place windows on traced wall edges.',
   door:'Place door openings on traced wall edges.',
   exit:'Place exit openings on exterior wall edges.',
-  erase:'Erase traced walls or wall features. Use Floor to remove footprint cells.'
+  erase:'Erase traced walls or wall features. Use Footprint to remove occupiable cells.'
 };
 
 let COLS = DEFAULT_GRID.cols;
@@ -233,7 +255,7 @@ let wallFeatures = [];
 let rooms = [];
 let selectedRoom = null;
 
-let currentTool = 'select';
+let currentTool = 'floor';
 let isPaintingFloor = false;
 let floorDrawValue = true;
 let isDrawingWall = false;
@@ -261,6 +283,10 @@ function roundNum(value, digits = 2) {
   if(!Number.isFinite(value)) return value;
   const factor = Math.pow(10, digits);
   return Math.round(value * factor) / factor;
+}
+
+function toolLabel(tool) {
+  return tool === 'floor' ? 'footprint' : tool;
 }
 
 function cloneEnv() {
@@ -327,6 +353,203 @@ function clearGeometry() {
   hoverValid = false;
   initWalls();
   update();
+}
+
+function rebuildExteriorWalls() {
+  initWalls();
+  for(const key of activeCells) {
+    const [x, y] = parseCellKey(key);
+    if(!isCellActive(x, y - 1)) hWalls[y][x] = true;
+    if(!isCellActive(x, y + 1)) hWalls[y + 1][x] = true;
+    if(!isCellActive(x - 1, y)) vWalls[y][x] = true;
+    if(!isCellActive(x + 1, y)) vWalls[y][x + 1] = true;
+  }
+}
+
+function syncWallsToFootprint() {
+  const prevHWalls = hWalls.map(row => row.slice());
+  const prevVWalls = vWalls.map(row => row.slice());
+  const prevFeatures = wallFeatures.map(feature => ({ ...feature }));
+
+  rebuildExteriorWalls();
+
+  for(let r = 0; r <= ROWS; r++) {
+    for(let c = 0; c < COLS; c++) {
+      if(!prevHWalls[r] || !prevHWalls[r][c]) continue;
+      const edge = { orient:'h', r, c };
+      const activeCount = adjacentCellsForEdge(edge).filter(([x, y]) => isCellActive(x, y)).length;
+      if(activeCount === 2) hWalls[r][c] = true;
+    }
+  }
+
+  for(let r = 0; r < ROWS; r++) {
+    for(let c = 0; c <= COLS; c++) {
+      if(!prevVWalls[r] || !prevVWalls[r][c]) continue;
+      const edge = { orient:'v', r, c };
+      const activeCount = adjacentCellsForEdge(edge).filter(([x, y]) => isCellActive(x, y)).length;
+      if(activeCount === 2) vWalls[r][c] = true;
+    }
+  }
+
+  wallFeatures = prevFeatures.filter(feature => {
+    if(!edgeHasWall(feature) || !edgeTouchesActiveCell(feature)) return false;
+    if(feature.type === 'exit') return isExteriorEdge(feature);
+    return true;
+  });
+}
+
+function dilateMask(mask, width, height, radius) {
+  if(radius <= 0) return mask;
+  const out = new Uint8Array(mask.length);
+  for(let y = 0; y < height; y++) {
+    for(let x = 0; x < width; x++) {
+      if(!mask[y * width + x]) continue;
+      for(let dy = -radius; dy <= radius; dy++) {
+        const ny = y + dy;
+        if(ny < 0 || ny >= height) continue;
+        for(let dx = -radius; dx <= radius; dx++) {
+          const nx = x + dx;
+          if(nx < 0 || nx >= width) continue;
+          out[ny * width + nx] = 1;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+function floodFillExterior(barrier, width, height) {
+  const exterior = new Uint8Array(barrier.length);
+  const queue = new Int32Array(barrier.length);
+  let head = 0;
+  let tail = 0;
+
+  function enqueue(x, y) {
+    const idx = y * width + x;
+    if(barrier[idx] || exterior[idx]) return;
+    exterior[idx] = 1;
+    queue[tail++] = idx;
+  }
+
+  for(let x = 0; x < width; x++) {
+    enqueue(x, 0);
+    enqueue(x, height - 1);
+  }
+  for(let y = 1; y < height - 1; y++) {
+    enqueue(0, y);
+    enqueue(width - 1, y);
+  }
+
+  while(head < tail) {
+    const idx = queue[head++];
+    const x = idx % width;
+    const y = (idx - x) / width;
+    if(x > 0) enqueue(x - 1, y);
+    if(x + 1 < width) enqueue(x + 1, y);
+    if(y > 0) enqueue(x, y - 1);
+    if(y + 1 < height) enqueue(x, y + 1);
+  }
+
+  return exterior;
+}
+
+function buildFootprintFromPdf() {
+  if(!pdfCanvas) return null;
+
+  const gridWidth = COLS * CELL;
+  const gridHeight = ROWS * CELL;
+  const rasterScale = Math.min(1, FOOTPRINT_DETECT.maxDim / Math.max(gridWidth, gridHeight));
+  const rasterWidth = Math.max(1, Math.round(gridWidth * rasterScale));
+  const rasterHeight = Math.max(1, Math.round(gridHeight * rasterScale));
+
+  const scratch = document.createElement('canvas');
+  scratch.width = rasterWidth;
+  scratch.height = rasterHeight;
+  const scratchCtx = scratch.getContext('2d', { willReadFrequently:true });
+  scratchCtx.fillStyle = '#ffffff';
+  scratchCtx.fillRect(0, 0, rasterWidth, rasterHeight);
+  scratchCtx.drawImage(
+    pdfCanvas,
+    pdfView.offsetX * rasterScale,
+    pdfView.offsetY * rasterScale,
+    pdfCanvas.width * pdfView.zoom * rasterScale,
+    pdfCanvas.height * pdfView.zoom * rasterScale
+  );
+
+  const imageData = scratchCtx.getImageData(0, 0, rasterWidth, rasterHeight).data;
+  const rawBarrier = new Uint8Array(rasterWidth * rasterHeight);
+  for(let i = 0, p = 0; i < imageData.length; i += 4, p++) {
+    const alpha = imageData[i + 3];
+    if(alpha < 8) continue;
+    const luminance = 0.2126 * imageData[i] + 0.7152 * imageData[i + 1] + 0.0722 * imageData[i + 2];
+    if(luminance < FOOTPRINT_DETECT.luminanceThreshold) rawBarrier[p] = 1;
+  }
+
+  const dilationRadius = Math.max(1, Math.round(2 * rasterScale));
+  const barrier = dilateMask(rawBarrier, rasterWidth, rasterHeight, dilationRadius);
+  const exterior = floodFillExterior(barrier, rasterWidth, rasterHeight);
+  const interior = new Uint8Array(barrier.length);
+  for(let i = 0; i < interior.length; i++) {
+    interior[i] = barrier[i] || exterior[i] ? 0 : 1;
+  }
+
+  const detected = new Set();
+  for(let y = 0; y < ROWS; y++) {
+    for(let x = 0; x < COLS; x++) {
+      const rawX0 = Math.floor(x * CELL * rasterScale);
+      const rawY0 = Math.floor(y * CELL * rasterScale);
+      const rawX1 = Math.max(rawX0 + 1, Math.floor((x + 1) * CELL * rasterScale));
+      const rawY1 = Math.max(rawY0 + 1, Math.floor((y + 1) * CELL * rasterScale));
+      const insetX = Math.min(2, Math.max(0, Math.floor((rawX1 - rawX0) * 0.16)));
+      const insetY = Math.min(2, Math.max(0, Math.floor((rawY1 - rawY0) * 0.16)));
+      const sampleX0 = Math.min(rawX1 - 1, rawX0 + insetX);
+      const sampleY0 = Math.min(rawY1 - 1, rawY0 + insetY);
+      const sampleX1 = Math.max(sampleX0 + 1, rawX1 - insetX);
+      const sampleY1 = Math.max(sampleY0 + 1, rawY1 - insetY);
+
+      let sampleCount = 0;
+      let interiorCount = 0;
+      for(let py = sampleY0; py < sampleY1; py++) {
+        let rowIdx = py * rasterWidth + sampleX0;
+        for(let px = sampleX0; px < sampleX1; px++, rowIdx++) {
+          sampleCount++;
+          interiorCount += interior[rowIdx];
+        }
+      }
+
+      if(sampleCount === 0) continue;
+      if(interiorCount >= FOOTPRINT_DETECT.minCellPixels && interiorCount / sampleCount >= FOOTPRINT_DETECT.minCellFill) {
+        detected.add(cellKey(x, y));
+      }
+    }
+  }
+
+  return detected;
+}
+
+function autoDetectFootprint(announce = true) {
+  if(!pdfCanvas) {
+    setStatus('Load a PDF before running footprint detection.', true);
+    return false;
+  }
+
+  const detected = buildFootprintFromPdf();
+  if(!detected || !detected.size) {
+    setTool('floor');
+    setStatus('Auto detect could not find a footprint. Adjust the PDF alignment or refine manually.', true);
+    return false;
+  }
+
+  activeCells = detected;
+  selectedRoom = null;
+  syncWallsToFootprint();
+  detectRooms();
+  setTool('floor');
+  update();
+  if(announce) {
+    setStatus('Auto-detected ' + detected.size + ' footprint cells and generated exterior walls. Refine the footprint, then add interior partitions.', true);
+  }
+  return true;
 }
 
 function setCellActive(x, y, active) {
@@ -537,7 +760,11 @@ function setTool(tool) {
   });
   document.getElementById('toolHint').textContent = TOOL_HINTS[tool] || TOOL_HINTS.select;
   canvas.style.cursor = tool === 'select' ? 'default' : 'crosshair';
+  if(activeCells.size === 0 && !['floor','select'].includes(tool)) {
+    setStatus('Confirm the footprint first, then add walls or openings.', true);
+  }
   updateStatus();
+  updateEmptyState();
   render();
 }
 
@@ -615,6 +842,27 @@ function drawHoverCellOverlay(cell) {
   ctx.strokeRect(x * CELL + 2, y * CELL + 2, CELL - 4, CELL - 4);
 }
 
+function updateEmptyState() {
+  const overlay = document.getElementById('emptyOverlay');
+  const title = document.getElementById('emptyOverlayTitle');
+  const body = document.getElementById('emptyOverlayBody');
+  const show = activeCells.size === 0;
+
+  overlay.style.display = show ? 'flex' : 'none';
+  if(!show) return;
+
+  if(currentTool === 'floor') {
+    title.textContent = 'Define Footprint First';
+    body.textContent = pdfDoc
+      ? 'Use Auto Detect Footprint for a first pass, then refine it with the Footprint tool. Drag across empty cells to add them and across active cells to erase.'
+      : 'Load a PDF, then use Auto Detect Footprint or trace the occupiable footprint manually.';
+    return;
+  }
+
+  title.textContent = 'Footprint Required';
+  body.textContent = 'This tool depends on an existing footprint. Switch to Footprint, auto-detect or refine the occupiable area, then return to walls and openings.';
+}
+
 function drawHoverEdgeOverlay(edge, valid, tool) {
   const colorMap = { wall:'#2d2d2d', window:'#4a7fb5', door:'#8b6914', exit:'#27ae60', erase:'#c0392b' };
   ctx.save();
@@ -652,8 +900,11 @@ function render() {
   for(let y = 0; y < ROWS; y++) {
     for(let x = 0; x < COLS; x++) {
       if(isCellActive(x, y)) {
-        ctx.fillStyle = '#fffdfa';
+        ctx.fillStyle = 'rgba(255,249,238,0.96)';
         ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+        ctx.strokeStyle = 'rgba(139,115,85,0.18)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x * CELL + 0.5, y * CELL + 0.5, CELL - 1, CELL - 1);
       }
     }
   }
@@ -749,7 +1000,7 @@ function updateRoomList() {
   const roomList = document.getElementById('roomList');
   document.getElementById('roomCount').textContent = '(' + rooms.length + ')';
   if(!rooms.length) {
-    roomList.innerHTML = '<div class="empty">No rooms detected yet. Trace floor and add partitions to create enclosed zones.</div>';
+    roomList.innerHTML = '<div class="empty">No rooms detected yet. Confirm the footprint and add partitions to create enclosed zones.</div>';
     return;
   }
   roomList.innerHTML = rooms.map(room =>
@@ -789,7 +1040,7 @@ function updateStats() {
     exits: wallFeatures.filter(feature => feature.type === 'exit').length
   };
   const rows = [
-    ['Floor cells', counts.floor],
+    ['Footprint cells', counts.floor],
     ['Rooms', counts.rooms],
     ['Windows', counts.windows],
     ['Doors', counts.doors],
@@ -811,12 +1062,16 @@ function updatePdfMeta() {
 }
 
 function updateStatus() {
-  document.getElementById('statusL').textContent = statusNote || ('Rooms: ' + rooms.length + ' · Tool: ' + currentTool);
+  const fallback = activeCells.size === 0
+    ? ('No footprint yet · Tool: ' + toolLabel(currentTool) + ' · Auto detect or refine it to start')
+    : ('Rooms: ' + rooms.length + ' · Tool: ' + toolLabel(currentTool));
+  document.getElementById('statusL').textContent = statusNote || fallback;
   document.getElementById('statusR').textContent = 'Grid: ' + COLS + 'x' + ROWS + ' · ' + CELL_M.toFixed(2) + ' m/cell';
 }
 
 function update() {
   render();
+  updateEmptyState();
   updateRoomList();
   updateRoomPanel();
   updateStats();
@@ -846,6 +1101,16 @@ async function loadPdfFromData(source) {
   await renderPdfPage();
 }
 
+function finishPdfLoad(label) {
+  const detected = autoDetectFootprint(false);
+  setTool('floor');
+  if(detected) {
+    setStatus('Loaded ' + label + ' and auto-detected a candidate footprint. Refine it, then add interior partitions.', true);
+    return;
+  }
+  setStatus('Loaded ' + label + '. Auto detect did not find a usable footprint, so refine it manually or adjust the PDF and retry.', true);
+}
+
 async function loadBundledSample() {
   try {
     const response = await fetch('floor_plan/tav-floor-plan-mar-09.pdf');
@@ -853,7 +1118,7 @@ async function loadBundledSample() {
     const buffer = await response.arrayBuffer();
     pdfSourceName = 'tav-floor-plan-mar-09.pdf';
     await loadPdfFromData({ data: buffer });
-    setStatus('Loaded bundled sample PDF.', true);
+    finishPdfLoad('bundled sample PDF');
   } catch (err) {
     console.error(err);
     setStatus('Bundled sample could not be loaded here. Upload the PDF manually if needed.', true);
@@ -929,7 +1194,7 @@ function applyGridSettings() {
   );
   clearGeometry();
   fitPdfToCanvas();
-  setStatus('Applied new grid and cleared traced geometry.', true);
+  setStatus('Applied new grid and cleared traced geometry. Re-run Auto Detect Footprint or refine manually.', true);
 }
 
 function nearestEdge(px, py) {
@@ -1070,7 +1335,7 @@ document.getElementById('pdfInput').addEventListener('change', event => {
     try {
       pdfSourceName = file.name;
       await loadPdfFromData({ data: reader.result });
-      setStatus('Loaded uploaded PDF.', true);
+      finishPdfLoad('uploaded PDF');
     } catch (err) {
       console.error(err);
       setStatus('PDF upload failed.', true);
@@ -1092,7 +1357,7 @@ canvas.addEventListener('mousedown', event => {
     if(!canMove(col, row)) return;
     floorDrawValue = !isCellActive(col, row);
     if(setCellActive(col, row, floorDrawValue)) {
-      cleanupFeatures();
+      syncWallsToFootprint();
       detectRooms();
       isPaintingFloor = true;
       update();
@@ -1102,7 +1367,10 @@ canvas.addEventListener('mousedown', event => {
 
   const edge = resolveEdgeForTool(px, py, currentTool);
   if(currentTool === 'wall') {
-    if(!edgeTouchesActiveCell(edge)) return;
+    if(!edgeTouchesActiveCell(edge)) {
+      setStatus('No footprint under this edge yet. Confirm or refine the footprint first.', true);
+      return;
+    }
     wallDrawValue = !edgeHasWall(edge);
     if(setEdgeWall(edge, wallDrawValue)) {
       cleanupFeatures();
@@ -1114,7 +1382,10 @@ canvas.addEventListener('mousedown', event => {
   }
 
   if(currentTool === 'erase') {
-    if(!edgeTouchesActiveCell(edge)) return;
+    if(!edgeTouchesActiveCell(edge)) {
+      setStatus('Erase works on traced footprint and wall geometry only.', true);
+      return;
+    }
     let changed = removeFeatureAt(edge);
     changed = setEdgeWall(edge, false) || changed;
     if(changed) {
@@ -1128,7 +1399,10 @@ canvas.addEventListener('mousedown', event => {
   }
 
   if(['window','door','exit'].includes(currentTool)) {
-    if(!isEdgeActionValid(edge, currentTool)) return;
+    if(!isEdgeActionValid(edge, currentTool)) {
+      setStatus('Place ' + currentTool + 's on traced wall edges after the footprint exists.', true);
+      return;
+    }
     removeFeatureAt(edge);
     wallFeatures.push({ type: currentTool, orient: edge.orient, r: edge.r, c: edge.c });
     update();
@@ -1141,7 +1415,7 @@ canvas.addEventListener('mousemove', event => {
 
   if(isPaintingFloor && currentTool === 'floor') {
     if(canMove(col, row) && setCellActive(col, row, floorDrawValue)) {
-      cleanupFeatures();
+      syncWallsToFootprint();
       detectRooms();
       update();
       hoverChanged = false;
@@ -1187,6 +1461,7 @@ window.addEventListener('resize', () => {
 configureGrid(DEFAULT_GRID.cols, DEFAULT_GRID.rows, DEFAULT_GRID.cellSizeM);
 initWalls();
 syncPdfControls();
+setTool('floor');
 update();
 </script>
 </body>
