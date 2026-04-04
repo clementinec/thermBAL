@@ -14,11 +14,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 header h1{font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
 header span{font-size:11px;color:var(--accent)}
 .main{display:flex;flex:1;overflow:hidden}
-.sidebar{width:300px;border-right:1px solid var(--border);overflow-y:auto;background:var(--panel);padding:8px;flex-shrink:0}
-.sidebar-r{width:360px;border-left:1px solid var(--border);overflow-y:auto;background:var(--panel);padding:8px;flex-shrink:0}
-.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.canvas-wrap{flex:1;overflow:auto;position:relative;background:#fff}
-canvas#grid{display:block;cursor:default}
+.sidebar{width:300px;border-right:1px solid var(--border);overflow-y:auto;background:var(--panel);padding:8px;flex-shrink:0;min-width:0}
+.sidebar-r{width:360px;border-left:1px solid var(--border);overflow-y:auto;background:var(--panel);padding:8px;flex-shrink:0;min-width:0}
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:0}
+.canvas-wrap{flex:1;overflow:auto;position:relative;background:
+  radial-gradient(circle at 20% 20%, #fffdf8 0, #fffdf8 24%, #f5efe4 100%);
+  display:flex;align-items:center;justify-content:center;padding:16px;min-width:0;min-height:0}
+canvas#grid{display:block;cursor:default;box-shadow:0 12px 24px rgba(45,45,45,0.08);border:1px solid #e9e2d7;border-radius:6px;background:#fff}
 .panel{margin-bottom:8px;border:1px solid var(--border);background:#fff;border-radius:4px}
 .panel-hdr{padding:6px 8px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .panel-body{padding:8px}
@@ -47,9 +49,9 @@ canvas#grid{display:block;cursor:default}
 .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .item-sub{margin-top:4px;font-size:10px;color:var(--muted);line-height:1.4}
 .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
-.stat-card{padding:6px;border:1px solid var(--border);border-radius:3px;background:#fcfbf9}
+.stat-card{padding:6px;border:1px solid var(--border);border-radius:3px;background:#fcfbf9;min-width:0}
 .stat-card .label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.stat-card .value{margin-top:4px;font-size:13px;font-weight:600}
+.stat-card .value{margin-top:4px;font-size:13px;font-weight:600;overflow-wrap:anywhere}
 .metric-line{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding:4px 0;border-bottom:1px solid #f1eee8}
 .metric-line:last-child{border-bottom:none}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:999px;font-size:9px;border:1px solid var(--border);background:#faf7f2;color:var(--muted)}
@@ -69,6 +71,13 @@ canvas#grid{display:block;cursor:default}
 .json-view .bool{color:#569cd6}
 .pmv-scale{display:flex;justify-content:space-between;font-size:9px;color:#999;padding:2px 4px 0}
 .status-bar{padding:4px 16px;border-top:1px solid var(--border);background:var(--panel);font-size:10px;display:flex;justify-content:space-between;gap:16px}
+#roomBody{overflow-x:hidden}
+#roomBody .tool-note{margin-bottom:8px}
+#roomBody .field{display:grid;grid-template-columns:76px minmax(0,1fr) 64px;align-items:center}
+#roomBody .field label{width:auto}
+#roomBody .field input[type=range]{width:100%;min-width:0}
+#roomBody .field input[type=number],#roomBody .field input[type=text],#roomBody .field select{width:100%;min-width:0}
+#roomBody .field > :nth-child(2):last-child{grid-column:2 / 4}
 @media(max-width:1280px){
   .sidebar{width:280px}
   .sidebar-r{width:332px}
@@ -150,7 +159,7 @@ canvas#grid{display:block;cursor:default}
   </div>
 
   <div class="center">
-    <div class="canvas-wrap"><canvas id="grid"></canvas></div>
+    <div class="canvas-wrap" id="canvasWrap"><canvas id="grid"></canvas></div>
   </div>
 
   <div class="sidebar-r">
@@ -259,8 +268,10 @@ let hoverCell = null;
 let hoverEdge = null;
 let hoverValid = false;
 let hoverAgentId = null;
+let liveRoomRefreshPending = false;
 
 const canvas = document.getElementById('grid');
+const canvasWrap = document.getElementById('canvasWrap');
 const ctx = canvas.getContext('2d');
 
 function roundNum(value, digits = 2) {
@@ -1137,8 +1148,19 @@ function resizeCanvas() {
   canvas.height = ROWS * CELL + 1;
 }
 
+function layoutCanvas() {
+  if(!canvasWrap) return;
+  const padding = 32;
+  const availW = Math.max(1, canvasWrap.clientWidth - padding);
+  const availH = Math.max(1, canvasWrap.clientHeight - padding);
+  const scale = Math.min(availW / canvas.width, availH / canvas.height, 1);
+  canvas.style.width = Math.round(canvas.width * scale) + 'px';
+  canvas.style.height = Math.round(canvas.height * scale) + 'px';
+}
+
 function render() {
   resizeCanvas();
+  layoutCanvas();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#f4f0e9';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1515,12 +1537,12 @@ function updateRoomPanel() {
   body.innerHTML = `
     <div class="tool-note">${room.cells.size} cells · ${occupants.length} occupants · ${counts.window} windows · ${counts.door} doors · ${counts.exit} exits</div>
     <div class="field"><label>Name</label><input type="text" value="${escapeAttr(room.name)}" onchange="updRoom('name',this.value)" style="width:110px"></div>
-    <div class="field"><label>Air temp °C</label><input type="range" min="10" max="35" step="0.5" value="${env.air_temp}" oninput="updRoom('air_temp',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.air_temp}" min="10" max="35" step="0.5" onchange="updRoom('air_temp',+this.value);this.previousElementSibling.value=this.value"></div>
-    <div class="field"><label>MRT °C</label><input type="range" min="10" max="35" step="0.5" value="${env.mean_radiant_temp}" oninput="updRoom('mean_radiant_temp',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.mean_radiant_temp}" min="10" max="35" step="0.5" onchange="updRoom('mean_radiant_temp',+this.value);this.previousElementSibling.value=this.value"></div>
-    <div class="field"><label>Humidity %</label><input type="range" min="0" max="100" step="1" value="${env.humidity}" oninput="updRoom('humidity',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.humidity}" min="0" max="100" onchange="updRoom('humidity',+this.value);this.previousElementSibling.value=this.value"></div>
-    <div class="field"><label>Air vel. m/s</label><input type="range" min="0" max="2" step="0.05" value="${env.air_velocity}" oninput="updRoom('air_velocity',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.air_velocity}" min="0" max="2" step="0.05" onchange="updRoom('air_velocity',+this.value);this.previousElementSibling.value=this.value"></div>
-    <div class="field"><label>Lux</label><input type="range" min="0" max="1000" step="10" value="${env.lux}" oninput="updRoom('lux',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.lux}" min="0" max="1000" onchange="updRoom('lux',+this.value);this.previousElementSibling.value=this.value"></div>
-    <div class="field"><label>Noise dB</label><input type="range" min="20" max="90" step="1" value="${env.noise_db}" oninput="updRoom('noise_db',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.noise_db}" min="20" max="90" onchange="updRoom('noise_db',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Air temp °C</label><input type="range" min="10" max="35" step="0.5" value="${env.air_temp}" oninput="updRoomLive('air_temp',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.air_temp}" min="10" max="35" step="0.5" onchange="updRoom('air_temp',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>MRT °C</label><input type="range" min="10" max="35" step="0.5" value="${env.mean_radiant_temp}" oninput="updRoomLive('mean_radiant_temp',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.mean_radiant_temp}" min="10" max="35" step="0.5" onchange="updRoom('mean_radiant_temp',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Humidity %</label><input type="range" min="0" max="100" step="1" value="${env.humidity}" oninput="updRoomLive('humidity',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.humidity}" min="0" max="100" onchange="updRoom('humidity',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Air vel. m/s</label><input type="range" min="0" max="2" step="0.05" value="${env.air_velocity}" oninput="updRoomLive('air_velocity',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.air_velocity}" min="0" max="2" step="0.05" onchange="updRoom('air_velocity',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Lux</label><input type="range" min="0" max="1000" step="10" value="${env.lux}" oninput="updRoomLive('lux',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.lux}" min="0" max="1000" onchange="updRoom('lux',+this.value);this.previousElementSibling.value=this.value"></div>
+    <div class="field"><label>Noise dB</label><input type="range" min="20" max="90" step="1" value="${env.noise_db}" oninput="updRoomLive('noise_db',+this.value);this.nextElementSibling.value=this.value"><input type="number" value="${env.noise_db}" min="20" max="90" onchange="updRoom('noise_db',+this.value);this.previousElementSibling.value=this.value"></div>
     <div class="field"><label>Ceiling m</label><input type="number" value="${room.ceilH}" min="2" max="6" step="0.1" onchange="updRoom('ceilH',+this.value)"></div>
   `;
 }
@@ -1714,23 +1736,39 @@ function updateStatus() {
   document.getElementById('statusR').textContent = right;
 }
 
-function update() {
-  if(selectedAgent && !agents.some(agent => agent.id === selectedAgent)) selectedAgent = null;
-  if(selectedRoom && !rooms.some(room => room.id === selectedRoom)) selectedRoom = null;
-
+function refreshComputedViews() {
   rebuildSnapshotCache();
   render();
   updatePlanStats();
   updateRoomList();
-  updateRoomPanel();
   updateAgentList();
-  updateAgentPanel();
   updateComfortOverview();
   updateAlerts();
   updateJSON();
   drawPMVChart();
   drawPPDChart();
   updateStatus();
+}
+
+function queueLiveRoomRefresh() {
+  if(liveRoomRefreshPending) return;
+  liveRoomRefreshPending = true;
+  const schedule = typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame
+    : (cb) => setTimeout(cb, 16);
+  schedule(() => {
+    liveRoomRefreshPending = false;
+    refreshComputedViews();
+  });
+}
+
+function update() {
+  if(selectedAgent && !agents.some(agent => agent.id === selectedAgent)) selectedAgent = null;
+  if(selectedRoom && !rooms.some(room => room.id === selectedRoom)) selectedRoom = null;
+
+  refreshComputedViews();
+  updateRoomPanel();
+  updateAgentPanel();
 }
 
 function updAgent(key, value) {
@@ -1762,6 +1800,13 @@ function updRoom(key, value) {
   else if(key === 'ceilH') room.ceilH = value;
   else room.env[key] = value;
   update();
+}
+
+function updRoomLive(key, value) {
+  const room = rooms.find(item => item.id === selectedRoom);
+  if(!room) return;
+  room.env[key] = value;
+  queueLiveRoomRefresh();
 }
 
 const TEMPLATES = {
@@ -1966,8 +2011,10 @@ function exportSnapshots() {
 
 function getGridPos(event) {
   const rect = canvas.getBoundingClientRect();
-  const px = event.clientX - rect.left;
-  const py = event.clientY - rect.top;
+  const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+  const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+  const px = (event.clientX - rect.left) * scaleX;
+  const py = (event.clientY - rect.top) * scaleY;
   return { px, py, col: Math.floor(px / CELL), row: Math.floor(py / CELL) };
 }
 
@@ -2147,6 +2194,10 @@ canvas.addEventListener('mouseleave', () => {
   hoverValid = false;
   hoverAgentId = null;
   render();
+});
+
+window.addEventListener('resize', () => {
+  layoutCanvas();
 });
 
 loadDefaultPlan();
