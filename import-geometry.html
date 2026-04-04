@@ -112,6 +112,11 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
           <input type="number" min="0" max="1" step="0.05" value="0.55" onchange="updatePdfView('opacity',+this.value);this.previousElementSibling.value=this.value">
         </div>
         <div class="field">
+          <label>Footprint Opacity</label>
+          <input id="footprintOpacity" type="range" min="0" max="1" step="0.05" value="0.82" oninput="updateFootprintOpacity(+this.value);this.nextElementSibling.value=this.value">
+          <input id="footprintOpacityNum" type="number" min="0" max="1" step="0.05" value="0.82" onchange="updateFootprintOpacity(+this.value);document.getElementById('footprintOpacity').value=this.value">
+        </div>
+        <div class="field">
           <label>PDF Zoom</label>
           <input id="pdfZoom" type="range" min="0.1" max="3" step="0.01" value="1" oninput="updatePdfView('zoom',+this.value);this.nextElementSibling.value=this.value">
           <input type="number" min="0.1" max="3" step="0.01" value="1" onchange="updatePdfView('zoom',+this.value);this.previousElementSibling.value=this.value">
@@ -155,10 +160,10 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
       <div class="panel-hdr">Export</div>
       <div class="panel-body">
         <div class="add-row">
-          <button class="btn" onclick="downloadTemplate()" style="flex:1">Download Template</button>
+          <button class="btn" onclick="downloadTemplate()" style="flex:1">Download Geometry JSON</button>
           <button class="btn btn-a" onclick="sendToSimulator()" style="flex:1">Send To Simulator</button>
         </div>
-        <div class="muted">Templates are JSON payloads compatible with the simulator's new template import path.</div>
+        <div class="muted">The download is simulator-ready JSON. Later, use `Load Geometry JSON` in the simulator to bring it back in.</div>
       </div>
     </div>
   </div>
@@ -241,7 +246,7 @@ const FOOTPRINT_DETECT = {
 const TOOL_HINTS = {
   select:'Select rooms to rename them and inspect the traced zoning.',
   floor:'Confirm or refine the occupiable footprint. Drag across empty cells to add them and across active cells to erase.',
-  wall:'Draw interior partition walls on grid edges to create enclosed rooms. Exterior walls are auto-generated from the footprint.',
+  wall:'Draw interior partition walls on grid edges to create enclosed rooms. Each drag stroke stays locked to its starting orientation.',
   window:'Place windows on traced wall edges.',
   door:'Place door openings on traced wall edges.',
   exit:'Place exit openings on exterior wall edges.',
@@ -264,6 +269,7 @@ let isPaintingFloor = false;
 let floorDrawValue = true;
 let isDrawingWall = false;
 let wallDrawValue = true;
+let drawEdgeOrient = null;
 let hoverCell = null;
 let hoverEdge = null;
 let hoverValid = false;
@@ -276,6 +282,7 @@ let pdfPageCount = 0;
 let pdfSourceName = '';
 let pdfCanvas = null;
 let pdfView = { opacity:0.55, zoom:1, offsetX:0, offsetY:0 };
+let footprintView = { opacity:0.82 };
 
 const canvas = document.getElementById('importCanvas');
 const canvasWrap = document.getElementById('canvasWrap');
@@ -287,6 +294,10 @@ function roundNum(value, digits = 2) {
   if(!Number.isFinite(value)) return value;
   const factor = Math.pow(10, digits);
   return Math.round(value * factor) / factor;
+}
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
 }
 
 function toolLabel(tool) {
@@ -834,7 +845,7 @@ function downloadJSON(filename, data) {
 
 function downloadTemplate() {
   downloadJSON('thermBAL-geometry-template.json', buildTemplatePayload());
-  setStatus('Downloaded geometry template.', true);
+  setStatus('Downloaded simulator-ready geometry JSON. Use Load Geometry JSON in the simulator to import it later.', true);
 }
 
 function sendToSimulator() {
@@ -849,6 +860,7 @@ function sendToSimulator() {
 
 function setTool(tool) {
   currentTool = tool;
+  if(tool !== 'wall' && tool !== 'erase') drawEdgeOrient = null;
   hoverCell = null;
   hoverEdge = null;
   hoverValid = false;
@@ -985,6 +997,15 @@ function drawPdfBackground() {
   ctx.restore();
 }
 
+function footprintFillStyle() {
+  return 'rgba(255,249,238,' + roundNum(footprintView.opacity, 2) + ')';
+}
+
+function footprintStrokeStyle() {
+  const alpha = roundNum(Math.max(0.08, 0.22 * footprintView.opacity), 2);
+  return 'rgba(139,115,85,' + alpha + ')';
+}
+
 function render() {
   resizeCanvas();
   layoutCanvas();
@@ -997,9 +1018,9 @@ function render() {
   for(let y = 0; y < ROWS; y++) {
     for(let x = 0; x < COLS; x++) {
       if(isCellActive(x, y)) {
-        ctx.fillStyle = 'rgba(255,249,238,0.96)';
+        ctx.fillStyle = footprintFillStyle();
         ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
-        ctx.strokeStyle = 'rgba(139,115,85,0.18)';
+        ctx.strokeStyle = footprintStrokeStyle();
         ctx.lineWidth = 1;
         ctx.strokeRect(x * CELL + 0.5, y * CELL + 0.5, CELL - 1, CELL - 1);
       }
@@ -1268,6 +1289,17 @@ function updatePdfView(key, value) {
   update();
 }
 
+function syncFootprintControls() {
+  document.getElementById('footprintOpacity').value = footprintView.opacity;
+  document.getElementById('footprintOpacityNum').value = roundNum(footprintView.opacity, 2);
+}
+
+function updateFootprintOpacity(value) {
+  footprintView.opacity = clamp01(Number.isFinite(value) ? value : footprintView.opacity);
+  syncFootprintControls();
+  update();
+}
+
 function changePdfPage(delta) {
   if(!pdfDoc) return;
   const next = pdfPageNum + delta;
@@ -1310,6 +1342,17 @@ function nearestEdge(px, py) {
   if(minD === dBottom) return { orient:'h', r:cellY + 1, c:cellX };
   if(minD === dLeft) return { orient:'v', r:cellY, c:cellX };
   return { orient:'v', r:cellY, c:cellX + 1 };
+}
+
+function nearestEdgeForOrient(px, py, orient) {
+  const col = px / CELL;
+  const row = py / CELL;
+  const cellX = Math.floor(col);
+  const cellY = Math.floor(row);
+  const fracX = col - cellX;
+  const fracY = row - cellY;
+  if(orient === 'h') return fracY <= 0.5 ? { orient:'h', r:cellY, c:cellX } : { orient:'h', r:cellY + 1, c:cellX };
+  return fracX <= 0.5 ? { orient:'v', r:cellY, c:cellX } : { orient:'v', r:cellY, c:cellX + 1 };
 }
 
 function edgePixelDistance(edge, px, py) {
@@ -1357,10 +1400,14 @@ function isEdgeActionValid(edge, tool) {
   return false;
 }
 
-function resolveEdgeForTool(px, py, tool) {
+function resolveEdgeForTool(px, py, tool, preferredOrient = null) {
   let candidates = candidateEdgesAroundPoint(px, py).filter(edge => edgeTouchesActiveCell(edge));
+  if(preferredOrient) {
+    const locked = candidates.filter(edge => edge.orient === preferredOrient);
+    if(locked.length) candidates = locked;
+  }
   if(tool === 'wall') {
-    if(!candidates.length) return nearestEdge(px, py);
+    if(!candidates.length) return preferredOrient ? nearestEdgeForOrient(px, py, preferredOrient) : nearestEdge(px, py);
     return candidates.sort((a, b) => edgePixelDistance(a, px, py) - edgePixelDistance(b, px, py))[0];
   }
   if(tool === 'erase') {
@@ -1375,11 +1422,11 @@ function resolveEdgeForTool(px, py, tool) {
     const exterior = candidates.filter(edge => edgeHasWall(edge) && isExteriorEdge(edge));
     if(exterior.length) candidates = exterior;
   }
-  if(!candidates.length) return nearestEdge(px, py);
+  if(!candidates.length) return preferredOrient ? nearestEdgeForOrient(px, py, preferredOrient) : nearestEdge(px, py);
   return candidates.sort((a, b) => edgePixelDistance(a, px, py) - edgePixelDistance(b, px, py))[0];
 }
 
-function updateHoverState(px, py) {
+function updateHoverState(px, py, preferredOrient = null) {
   const col = Math.floor(px / CELL);
   const row = Math.floor(py / CELL);
   let nextCell = null;
@@ -1392,7 +1439,7 @@ function updateHoverState(px, py) {
       nextValid = currentTool === 'floor' || isCellActive(col, row);
     }
   } else {
-    nextEdge = resolveEdgeForTool(px, py, currentTool);
+    nextEdge = resolveEdgeForTool(px, py, currentTool, preferredOrient);
     nextValid = isEdgeActionValid(nextEdge, currentTool);
   }
 
@@ -1462,7 +1509,7 @@ canvas.addEventListener('mousedown', event => {
     return;
   }
 
-  const edge = resolveEdgeForTool(px, py, currentTool);
+  const edge = resolveEdgeForTool(px, py, currentTool, drawEdgeOrient);
   if(currentTool === 'wall') {
     if(!edgeTouchesActiveCell(edge)) {
       setStatus('No footprint under this edge yet. Confirm or refine the footprint first.', true);
@@ -1474,6 +1521,7 @@ canvas.addEventListener('mousedown', event => {
       detectRooms();
       update();
     }
+    drawEdgeOrient = edge.orient;
     isDrawingWall = true;
     return;
   }
@@ -1490,6 +1538,7 @@ canvas.addEventListener('mousedown', event => {
       detectRooms();
       update();
     }
+    drawEdgeOrient = edge.orient;
     isDrawingWall = true;
     wallDrawValue = false;
     return;
@@ -1508,7 +1557,8 @@ canvas.addEventListener('mousedown', event => {
 
 canvas.addEventListener('mousemove', event => {
   const { px, py, col, row } = getGridPos(event);
-  let hoverChanged = updateHoverState(px, py);
+  const orientLock = isDrawingWall ? drawEdgeOrient : null;
+  let hoverChanged = updateHoverState(px, py, orientLock);
 
   if(isPaintingFloor && currentTool === 'floor') {
     if(canMove(col, row) && setCellActive(col, row, floorDrawValue)) {
@@ -1521,7 +1571,7 @@ canvas.addEventListener('mousemove', event => {
   }
 
   if(isDrawingWall && (currentTool === 'wall' || currentTool === 'erase')) {
-    const edge = resolveEdgeForTool(px, py, currentTool);
+    const edge = resolveEdgeForTool(px, py, currentTool, drawEdgeOrient);
     let changed = false;
     if(currentTool === 'erase') changed = removeFeatureAt(edge) || changed;
     if(edgeTouchesActiveCell(edge)) changed = setEdgeWall(edge, wallDrawValue) || changed;
@@ -1540,11 +1590,13 @@ canvas.addEventListener('mousemove', event => {
 canvas.addEventListener('mouseup', () => {
   isPaintingFloor = false;
   isDrawingWall = false;
+  drawEdgeOrient = null;
 });
 
 canvas.addEventListener('mouseleave', () => {
   isPaintingFloor = false;
   isDrawingWall = false;
+  drawEdgeOrient = null;
   hoverCell = null;
   hoverEdge = null;
   hoverValid = false;
@@ -1558,6 +1610,7 @@ window.addEventListener('resize', () => {
 configureGrid(DEFAULT_GRID.cols, DEFAULT_GRID.rows, DEFAULT_GRID.cellSizeM);
 initWalls();
 syncPdfControls();
+syncFootprintControls();
 setTool('floor');
 update();
 </script>

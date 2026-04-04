@@ -116,7 +116,7 @@ canvas#grid{display:block;cursor:default;box-shadow:0 12px 24px rgba(45,45,45,0.
       <div class="panel-body">
         <div class="stat-grid" id="planStats"></div>
         <div class="add-row">
-          <button class="btn" onclick="triggerTemplateImport()" style="flex:1">Load Template</button>
+          <button class="btn" onclick="triggerTemplateImport()" style="flex:1">Load Geometry JSON</button>
           <button class="btn" onclick="openGeometryImporter()" style="flex:1">Import Geometry</button>
         </div>
         <div class="add-row" style="margin-top:6px">
@@ -2155,7 +2155,7 @@ function handleTemplateImportFile(event) {
     try {
       const payload = JSON.parse(String(reader.result));
       loadPlanTemplate(payload);
-      flashStatus('Loaded geometry template.');
+      flashStatus('Loaded geometry JSON.');
     } catch (err) {
       flashStatus('Template import failed.');
       console.error(err);
@@ -2172,7 +2172,7 @@ function tryLoadStagedTemplate() {
   if(!raw) return;
   try {
     loadPlanTemplate(JSON.parse(raw), { staged:true });
-    flashStatus('Loaded staged geometry template.');
+    flashStatus('Loaded staged geometry JSON.');
   } catch (err) {
     console.error(err);
     flashStatus('Staged geometry import failed.');
