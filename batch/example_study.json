@@ -1,0 +1,52 @@
+{
+  "scenarios": [
+    {
+      "id": "baseline"
+    },
+    {
+      "id": "warmer_dining_shift",
+      "description": "Warm the dining hall slightly and move one elder through several rooms.",
+      "room_overrides": {
+        "Dining Hall": {
+          "air_temp": 26.0,
+          "mean_radiant_temp": 26.0
+        }
+      },
+      "snapshot_times": [45],
+      "schedule": [
+        {
+          "t_min": 15,
+          "agent_id": "persona_01",
+          "move_to": [10, 6],
+          "activity": "walking"
+        },
+        {
+          "t_min": 30,
+          "agent_id": "persona_01",
+          "move_to": [2, 2],
+          "activity": "standing"
+        }
+      ]
+    },
+    {
+      "id": "geometry_only_agents",
+      "description": "Example for a geometry export with no base agents: populate agents entirely from the study file.",
+      "use_base_agents": false,
+      "agents": [
+        {
+          "id": "persona_10",
+          "profile": "elder_walker",
+          "position": [4, 7]
+        },
+        {
+          "id": "persona_11",
+          "profile": "young_visitor",
+          "position": [8, 2],
+          "activity": "standing",
+          "clo": 0.7
+        }
+      ],
+      "snapshot_times": [0, 20]
+    }
+  ]
+}

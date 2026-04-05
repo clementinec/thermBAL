@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from comfort_engine import (
     ComfortState,
@@ -61,17 +61,18 @@ class Simulator:
     >>> print(json.dumps(sim.snapshot("persona_01"), indent=2))
     """
 
-    def __init__(self, plan: FloorPlan) -> None:
+    def __init__(self, plan: FloorPlan, clock: Optional[Callable[[], float]] = None) -> None:
         self.plan = plan
         self.plan.build_index()
         self._agents: Dict[str, Agent] = {}
         self._state: Dict[str, _AgentState] = {}
+        self._clock = clock or time.time
 
     # ── Agent management ────────────────────────────────────────────
 
     def add_agent(self, agent: Agent) -> None:
         self._agents[agent.id] = agent
-        self._state[agent.id] = _AgentState(placed_at=time.time())
+        self._state[agent.id] = _AgentState(placed_at=self._clock())
 
     def remove_agent(self, agent_id: str) -> None:
         self._agents.pop(agent_id, None)
@@ -81,7 +82,7 @@ class Simulator:
         agent = self._agents[agent_id]
         if agent.position != new_pos:
             agent.position = new_pos
-            self._state[agent_id].placed_at = time.time()
+            self._state[agent_id].placed_at = self._clock()
 
     def get_agent(self, agent_id: str) -> Agent:
         return self._agents[agent_id]
@@ -192,7 +193,7 @@ class Simulator:
         }
 
         # ── dynamic state
-        duration_mins = round((time.time() - st.placed_at) / 60.0, 1)
+        duration_mins = round((self._clock() - st.placed_at) / 60.0, 1)
         dynamic_block = {
             "duration_mins": duration_mins,
             "activity": agent.activity,
