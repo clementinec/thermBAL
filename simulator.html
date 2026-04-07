@@ -363,6 +363,17 @@ function initWalls() {
   wallFeatures = [];
 }
 
+function rebuildExteriorWalls() {
+  initWalls();
+  for(const key of activeCells) {
+    const [x, y] = parseCellKey(key);
+    if(!isCellActive(x, y - 1)) hWalls[y][x] = true;
+    if(!isCellActive(x, y + 1)) hWalls[y + 1][x] = true;
+    if(!isCellActive(x - 1, y)) vWalls[y][x] = true;
+    if(!isCellActive(x + 1, y)) vWalls[y][x + 1] = true;
+  }
+}
+
 function canMove(x, y) {
   return x >= 0 && x < COLS && y >= 0 && y < ROWS;
 }
@@ -471,6 +482,38 @@ function removeFeatureAt(edge) {
 
 function cleanupFeatures() {
   wallFeatures = wallFeatures.filter(feature => edgeHasWall(feature) && edgeTouchesActiveCell(feature));
+}
+
+function syncWallsToFootprint() {
+  const prevHWalls = hWalls.map(row => row.slice());
+  const prevVWalls = vWalls.map(row => row.slice());
+  const prevFeatures = wallFeatures.map(feature => ({ ...feature }));
+
+  rebuildExteriorWalls();
+
+  for(let r = 0; r <= ROWS; r++) {
+    for(let c = 0; c < COLS; c++) {
+      if(!prevHWalls[r] || !prevHWalls[r][c]) continue;
+      const edge = { orient:'h', r, c };
+      const activeCount = adjacentCellsForEdge(edge).filter(([x, y]) => isCellActive(x, y)).length;
+      if(activeCount === 2) hWalls[r][c] = true;
+    }
+  }
+
+  for(let r = 0; r < ROWS; r++) {
+    for(let c = 0; c <= COLS; c++) {
+      if(!prevVWalls[r] || !prevVWalls[r][c]) continue;
+      const edge = { orient:'v', r, c };
+      const activeCount = adjacentCellsForEdge(edge).filter(([x, y]) => isCellActive(x, y)).length;
+      if(activeCount === 2) vWalls[r][c] = true;
+    }
+  }
+
+  wallFeatures = prevFeatures.filter(feature => {
+    if(!edgeHasWall(feature) || !edgeTouchesActiveCell(feature)) return false;
+    if(feature.type === 'exit') return isExteriorEdge(feature);
+    return true;
+  });
 }
 
 function wallBetween(x1, y1, x2, y2) {
@@ -2260,7 +2303,7 @@ canvas.addEventListener('mousedown', event => {
     floorDrawValue = !isCellActive(col, row);
     const changed = setCellActive(col, row, floorDrawValue);
     if(changed) {
-      cleanupFeatures();
+      syncWallsToFootprint();
       detectRooms();
       isPaintingFloor = true;
       selectedRoom = null;
@@ -2311,7 +2354,7 @@ canvas.addEventListener('mousemove', event => {
 
   if(isPaintingFloor && currentTool === 'floor') {
     if(canMove(col, row) && setCellActive(col, row, floorDrawValue)) {
-      cleanupFeatures();
+      syncWallsToFootprint();
       detectRooms();
       update();
       hoverChanged = false;
