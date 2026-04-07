@@ -1,0 +1,1155 @@
+{
+  "case_id": "apartment_daytime_cooled",
+  "title": "Apartment Daytime Cooled Population Sweep",
+  "seed": 20260407,
+  "assumptions": {
+    "orientation": "Bottom of plan is south.",
+    "operation": "Daytime cooled apartment condition.",
+    "thermal_model": "North/interior rooms use Tr=Ta, south-facing rooms use Tr=Ta+1.5 C, east/west-exposed rooms use Tr=Ta+0.75 C.",
+    "cohort_design": "Young mixed, young male-only, and age-shifted +50 years cohorts using the same room placement.",
+    "occupancy_rule": "One occupant is placed in each occupied habitable room."
+  },
+  "plan": {
+    "path": "floor_plan/apartment_template.json",
+    "template_name": "Apartment Floorplan Template",
+    "occupied_rooms": [
+      "Living Room",
+      "Dining Room",
+      "Primary Bedroom",
+      "Kitchen",
+      "Breakfast Nook",
+      "Study",
+      "Family Lounge West",
+      "Family Lounge East",
+      "Guest Room",
+      "Bedroom 1",
+      "Bedroom 2",
+      "Bedroom 3"
+    ],
+    "room_abbreviations": {
+      "Living Room": "LR",
+      "Dining Room": "DR",
+      "Primary Bedroom": "PB",
+      "Kitchen": "K",
+      "Breakfast Nook": "BN",
+      "Study": "ST",
+      "Family Lounge West": "FW",
+      "Family Lounge East": "FE",
+      "Guest Room": "GR",
+      "Bedroom 1": "B1",
+      "Bedroom 2": "B2",
+      "Bedroom 3": "B3"
+    }
+  },
+  "cohorts": {
+    "young_mixed": {
+      "label": "Young Scholars Mixed",
+      "description": "Mixed male/female cohort, ages 25-45, one occupant per occupied room.",
+      "agents": [
+        {
+          "id": "resident_01",
+          "position": [
+            12,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 29,
+            "gender": "female",
+            "weight_kg": 49.8,
+            "height_cm": 155,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Living Room",
+          "room_abbrev": "LR"
+        },
+        {
+          "id": "resident_02",
+          "position": [
+            20,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 42,
+            "gender": "female",
+            "weight_kg": 60.9,
+            "height_cm": 169,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Dining Room",
+          "room_abbrev": "DR"
+        },
+        {
+          "id": "resident_03",
+          "position": [
+            28,
+            6
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 41,
+            "gender": "male",
+            "weight_kg": 64.2,
+            "height_cm": 167,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Primary Bedroom",
+          "room_abbrev": "PB"
+        },
+        {
+          "id": "resident_04",
+          "position": [
+            3,
+            6
+          ],
+          "activity": "standing",
+          "clo": 0.45,
+          "demographics": {
+            "age": 29,
+            "gender": "female",
+            "weight_kg": 62.1,
+            "height_cm": 165,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Kitchen",
+          "room_abbrev": "K"
+        },
+        {
+          "id": "resident_05",
+          "position": [
+            7,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 39,
+            "gender": "male",
+            "weight_kg": 64.9,
+            "height_cm": 162,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Breakfast Nook",
+          "room_abbrev": "BN"
+        },
+        {
+          "id": "resident_06",
+          "position": [
+            25,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 31,
+            "gender": "male",
+            "weight_kg": 56.0,
+            "height_cm": 168,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Study",
+          "room_abbrev": "ST"
+        },
+        {
+          "id": "resident_07",
+          "position": [
+            12,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 33,
+            "gender": "male",
+            "weight_kg": 64.6,
+            "height_cm": 172,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Family Lounge West",
+          "room_abbrev": "FW"
+        },
+        {
+          "id": "resident_08",
+          "position": [
+            19,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 29,
+            "gender": "male",
+            "weight_kg": 74.7,
+            "height_cm": 170,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Family Lounge East",
+          "room_abbrev": "FE"
+        },
+        {
+          "id": "resident_09",
+          "position": [
+            8,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 41,
+            "gender": "male",
+            "weight_kg": 76.8,
+            "height_cm": 176,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Guest Room",
+          "room_abbrev": "GR"
+        },
+        {
+          "id": "resident_10",
+          "position": [
+            13,
+            18
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 33,
+            "gender": "male",
+            "weight_kg": 77.3,
+            "height_cm": 173,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 1",
+          "room_abbrev": "B1"
+        },
+        {
+          "id": "resident_11",
+          "position": [
+            18,
+            18
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 38,
+            "gender": "male",
+            "weight_kg": 59.1,
+            "height_cm": 171,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 2",
+          "room_abbrev": "B2"
+        },
+        {
+          "id": "resident_12",
+          "position": [
+            25,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 37,
+            "gender": "male",
+            "weight_kg": 77.1,
+            "height_cm": 181,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 3",
+          "room_abbrev": "B3"
+        }
+      ]
+    },
+    "young_male": {
+      "label": "Young Scholars Male Only",
+      "description": "Male-only control cohort using the same room assignment and latent demographic seeds.",
+      "agents": [
+        {
+          "id": "resident_01",
+          "position": [
+            12,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 29,
+            "gender": "male",
+            "weight_kg": 61.7,
+            "height_cm": 167,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Living Room",
+          "room_abbrev": "LR"
+        },
+        {
+          "id": "resident_02",
+          "position": [
+            20,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 42,
+            "gender": "male",
+            "weight_kg": 74.4,
+            "height_cm": 181,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Dining Room",
+          "room_abbrev": "DR"
+        },
+        {
+          "id": "resident_03",
+          "position": [
+            28,
+            6
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 41,
+            "gender": "male",
+            "weight_kg": 64.2,
+            "height_cm": 167,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Primary Bedroom",
+          "room_abbrev": "PB"
+        },
+        {
+          "id": "resident_04",
+          "position": [
+            3,
+            6
+          ],
+          "activity": "standing",
+          "clo": 0.45,
+          "demographics": {
+            "age": 29,
+            "gender": "male",
+            "weight_kg": 75.9,
+            "height_cm": 177,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Kitchen",
+          "room_abbrev": "K"
+        },
+        {
+          "id": "resident_05",
+          "position": [
+            7,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 39,
+            "gender": "male",
+            "weight_kg": 64.9,
+            "height_cm": 162,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Breakfast Nook",
+          "room_abbrev": "BN"
+        },
+        {
+          "id": "resident_06",
+          "position": [
+            25,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 31,
+            "gender": "male",
+            "weight_kg": 56.0,
+            "height_cm": 168,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Study",
+          "room_abbrev": "ST"
+        },
+        {
+          "id": "resident_07",
+          "position": [
+            12,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 33,
+            "gender": "male",
+            "weight_kg": 64.6,
+            "height_cm": 172,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Family Lounge West",
+          "room_abbrev": "FW"
+        },
+        {
+          "id": "resident_08",
+          "position": [
+            19,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 29,
+            "gender": "male",
+            "weight_kg": 74.7,
+            "height_cm": 170,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Family Lounge East",
+          "room_abbrev": "FE"
+        },
+        {
+          "id": "resident_09",
+          "position": [
+            8,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 41,
+            "gender": "male",
+            "weight_kg": 76.8,
+            "height_cm": 176,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Guest Room",
+          "room_abbrev": "GR"
+        },
+        {
+          "id": "resident_10",
+          "position": [
+            13,
+            18
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 33,
+            "gender": "male",
+            "weight_kg": 77.3,
+            "height_cm": 173,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 1",
+          "room_abbrev": "B1"
+        },
+        {
+          "id": "resident_11",
+          "position": [
+            18,
+            18
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 38,
+            "gender": "male",
+            "weight_kg": 59.1,
+            "height_cm": 171,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 2",
+          "room_abbrev": "B2"
+        },
+        {
+          "id": "resident_12",
+          "position": [
+            25,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 37,
+            "gender": "male",
+            "weight_kg": 77.1,
+            "height_cm": 181,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 60,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 3",
+          "room_abbrev": "B3"
+        }
+      ]
+    },
+    "older_shift": {
+      "label": "Age-Shifted +50 Years",
+      "description": "Same mixed cohort as young_mixed with every agent age shifted upward by 50 years.",
+      "agents": [
+        {
+          "id": "resident_01",
+          "position": [
+            12,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 79,
+            "gender": "female",
+            "weight_kg": 49.8,
+            "height_cm": 155,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Living Room",
+          "room_abbrev": "LR"
+        },
+        {
+          "id": "resident_02",
+          "position": [
+            20,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 92,
+            "gender": "female",
+            "weight_kg": 60.9,
+            "height_cm": 169,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Dining Room",
+          "room_abbrev": "DR"
+        },
+        {
+          "id": "resident_03",
+          "position": [
+            28,
+            6
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 91,
+            "gender": "male",
+            "weight_kg": 64.2,
+            "height_cm": 167,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Primary Bedroom",
+          "room_abbrev": "PB"
+        },
+        {
+          "id": "resident_04",
+          "position": [
+            3,
+            6
+          ],
+          "activity": "standing",
+          "clo": 0.45,
+          "demographics": {
+            "age": 79,
+            "gender": "female",
+            "weight_kg": 62.1,
+            "height_cm": 165,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Kitchen",
+          "room_abbrev": "K"
+        },
+        {
+          "id": "resident_05",
+          "position": [
+            7,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 89,
+            "gender": "male",
+            "weight_kg": 64.9,
+            "height_cm": 162,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Breakfast Nook",
+          "room_abbrev": "BN"
+        },
+        {
+          "id": "resident_06",
+          "position": [
+            25,
+            5
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 81,
+            "gender": "male",
+            "weight_kg": 56.0,
+            "height_cm": 168,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Study",
+          "room_abbrev": "ST"
+        },
+        {
+          "id": "resident_07",
+          "position": [
+            12,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 83,
+            "gender": "male",
+            "weight_kg": 64.6,
+            "height_cm": 172,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Family Lounge West",
+          "room_abbrev": "FW"
+        },
+        {
+          "id": "resident_08",
+          "position": [
+            19,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 79,
+            "gender": "male",
+            "weight_kg": 74.7,
+            "height_cm": 170,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Family Lounge East",
+          "room_abbrev": "FE"
+        },
+        {
+          "id": "resident_09",
+          "position": [
+            8,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 91,
+            "gender": "male",
+            "weight_kg": 76.8,
+            "height_cm": 176,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Guest Room",
+          "room_abbrev": "GR"
+        },
+        {
+          "id": "resident_10",
+          "position": [
+            13,
+            18
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 83,
+            "gender": "male",
+            "weight_kg": 77.3,
+            "height_cm": 173,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 1",
+          "room_abbrev": "B1"
+        },
+        {
+          "id": "resident_11",
+          "position": [
+            18,
+            18
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 88,
+            "gender": "male",
+            "weight_kg": 59.1,
+            "height_cm": 171,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 2",
+          "room_abbrev": "B2"
+        },
+        {
+          "id": "resident_12",
+          "position": [
+            25,
+            10
+          ],
+          "activity": "seated",
+          "clo": 0.55,
+          "demographics": {
+            "age": 87,
+            "gender": "male",
+            "weight_kg": 77.1,
+            "height_cm": 181,
+            "mobility": "normal",
+            "hearing": "normal",
+            "vision": "normal"
+          },
+          "preferences": {
+            "noise_tolerance_db": 55,
+            "light_preference": "moderate",
+            "social_density": "moderate"
+          },
+          "room_name": "Bedroom 3",
+          "room_abbrev": "B3"
+        }
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "id": "young_mixed_t22p0_rh35",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "young_mixed_t22p0_rh55",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "young_mixed_t22p0_rh75",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "young_mixed_t23p5_rh35",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "young_mixed_t23p5_rh55",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "young_mixed_t23p5_rh75",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "young_mixed_t25p0_rh35",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "young_mixed_t25p0_rh55",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "young_mixed_t25p0_rh75",
+      "cohort": "young_mixed",
+      "cohort_label": "Young Scholars Mixed",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "young_male_t22p0_rh35",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "young_male_t22p0_rh55",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "young_male_t22p0_rh75",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "young_male_t23p5_rh35",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "young_male_t23p5_rh55",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "young_male_t23p5_rh75",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "young_male_t25p0_rh35",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "young_male_t25p0_rh55",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "young_male_t25p0_rh75",
+      "cohort": "young_male",
+      "cohort_label": "Young Scholars Male Only",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "older_shift_t22p0_rh35",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "older_shift_t22p0_rh55",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "older_shift_t22p0_rh75",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 22.0,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "older_shift_t23p5_rh35",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "older_shift_t23p5_rh55",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "older_shift_t23p5_rh75",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 23.5,
+      "base_rh_pct": 75.0
+    },
+    {
+      "id": "older_shift_t25p0_rh35",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 35.0
+    },
+    {
+      "id": "older_shift_t25p0_rh55",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 55.0
+    },
+    {
+      "id": "older_shift_t25p0_rh75",
+      "cohort": "older_shift",
+      "cohort_label": "Age-Shifted +50 Years",
+      "base_ta_c": 25.0,
+      "base_rh_pct": 75.0
+    }
+  ]
+}
