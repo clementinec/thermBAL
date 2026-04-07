@@ -19,8 +19,8 @@ STUDY_PATH = CASE_DIR / "study.json"
 MANIFEST_PATH = CASE_DIR / "study_manifest.json"
 SEED = 20260407
 
-BASE_TEMPERATURES = [22.0, 23.5, 25.0]
-BASE_HUMIDITIES = [35.0, 55.0, 75.0]
+BASE_TEMPERATURES = [20.0, 22.0, 23.5, 25.0, 28.0]
+BASE_HUMIDITIES = [35.0, 55.0, 75.0, 80.0]
 
 COHORTS = {
     "young_mixed": {
@@ -35,21 +35,42 @@ COHORTS = {
         "label": "Age-Shifted +50 Years",
         "description": "Same mixed cohort as young_mixed with every agent age shifted upward by 50 years.",
     },
+    "higher_clo_sedentary": {
+        "label": "Higher Clo, Sedentary",
+        "description": "Mixed cohort with heavier clothing and reduced activity relative to the young mixed baseline.",
+    },
+    "lighter_clothing_mobile": {
+        "label": "Light Clothing, Mobile",
+        "description": "Mixed cohort with lighter clothing and elevated activity relative to the young mixed baseline.",
+    },
+    "higher_bmi_warm_sensitive": {
+        "label": "Higher BMI, Warm Sensitive",
+        "description": "Mixed cohort with higher BMI and slightly lighter clothing to test a heavier, warmer-running occupant profile.",
+    },
 }
 
-HABITABLE_ROOM_ORDER = [
+OCCUPIED_ROOM_ORDER = [
     "Living Room",
     "Dining Room",
     "Primary Bedroom",
     "Kitchen",
     "Breakfast Nook",
+    "Powder Room",
     "Study",
     "Family Lounge West",
     "Family Lounge East",
+    "Entry Closet",
+    "Service Vestibule",
     "Guest Room",
+    "Bath 2",
     "Bedroom 1",
     "Bedroom 2",
     "Bedroom 3",
+    "West Bedroom Hall",
+    "East Bedroom Hall",
+    "Laundry",
+    "Ensuite Bath",
+    "Shared Bath",
 ]
 
 ROOM_ACTIVITY = {
@@ -58,17 +79,33 @@ ROOM_ACTIVITY = {
     "Primary Bedroom": "seated",
     "Kitchen": "standing",
     "Breakfast Nook": "seated",
+    "Powder Room": "standing",
     "Study": "seated",
     "Family Lounge West": "seated",
     "Family Lounge East": "seated",
+    "Entry Closet": "standing",
+    "Service Vestibule": "standing",
     "Guest Room": "seated",
+    "Bath 2": "standing",
     "Bedroom 1": "seated",
     "Bedroom 2": "seated",
     "Bedroom 3": "seated",
+    "West Bedroom Hall": "standing",
+    "East Bedroom Hall": "standing",
+    "Laundry": "standing",
+    "Ensuite Bath": "standing",
+    "Shared Bath": "standing",
 }
 
 ROOM_CLO = {
     "Kitchen": 0.45,
+    "Powder Room": 0.45,
+    "Entry Closet": 0.45,
+    "Service Vestibule": 0.45,
+    "Bath 2": 0.45,
+    "Laundry": 0.45,
+    "Ensuite Bath": 0.45,
+    "Shared Bath": 0.45,
     "default": 0.55,
 }
 
@@ -117,14 +154,25 @@ ROOM_ABBREVIATIONS = {
     "Primary Bedroom": "PB",
     "Kitchen": "K",
     "Breakfast Nook": "BN",
+    "Powder Room": "PR",
     "Study": "ST",
     "Family Lounge West": "FW",
     "Family Lounge East": "FE",
+    "Entry Closet": "EC",
+    "Service Vestibule": "SV",
     "Guest Room": "GR",
+    "Bath 2": "B2A",
     "Bedroom 1": "B1",
     "Bedroom 2": "B2",
     "Bedroom 3": "B3",
+    "West Bedroom Hall": "WBH",
+    "East Bedroom Hall": "EBH",
+    "Laundry": "L",
+    "Ensuite Bath": "EB",
+    "Shared Bath": "SB",
 }
+
+ACTIVITY_LEVELS = ["seated", "standing", "walking"]
 
 
 def clamp(value: float, lower: float, upper: float) -> float:
@@ -147,6 +195,15 @@ def representative_cell(cells: List[Tuple[int, int]]) -> List[int]:
         key=lambda cell: ((cell[0] - cx) ** 2 + (cell[1] - cy) ** 2, cell[1], cell[0]),
     )
     return [chosen[0], chosen[1]]
+
+
+def shift_activity(activity: str, steps: int) -> str:
+    try:
+        index = ACTIVITY_LEVELS.index(activity)
+    except ValueError:
+        index = 1
+    next_index = max(0, min(len(ACTIVITY_LEVELS) - 1, index + steps))
+    return ACTIVITY_LEVELS[next_index]
 
 
 def sample_latents(room_names: List[str]) -> Dict[str, Dict[str, float]]:
@@ -190,6 +247,19 @@ def build_agent_payload(
     activity = ROOM_ACTIVITY[room_name]
     clo = ROOM_CLO.get(room_name, ROOM_CLO["default"])
 
+    if cohort_key == "higher_clo_sedentary":
+        activity = shift_activity(activity, -1)
+        clo += 0.35
+    elif cohort_key == "lighter_clothing_mobile":
+        activity = shift_activity(activity, 1)
+        clo -= 0.20
+    elif cohort_key == "higher_bmi_warm_sensitive":
+        bmi = clamp(bmi + 4.0, 21.0, 36.0)
+        weight_kg = bmi * (height_cm / 100.0) ** 2
+        clo -= 0.10
+
+    clo = clamp(clo, 0.30, 1.20)
+
     return {
         "id": "resident_{0:02d}".format(agent_index),
         "position": position,
@@ -205,7 +275,7 @@ def build_agent_payload(
             "vision": "normal",
         },
         "preferences": {
-            "noise_tolerance_db": 60 if cohort_key != "older_shift" else 55,
+            "noise_tolerance_db": 60 if cohort_key not in {"older_shift", "higher_bmi_warm_sensitive"} else 55,
             "light_preference": "moderate",
             "social_density": "moderate",
         },
@@ -251,26 +321,26 @@ def build_room_overrides(room_names: List[str], base_ta: float, base_rh: float) 
 def main() -> None:
     state = load_template_json(PLAN_PATH)
     rooms_by_name = {room.name: room for room in state.plan.rooms}
-    missing = [room_name for room_name in HABITABLE_ROOM_ORDER if room_name not in rooms_by_name]
+    missing = [room_name for room_name in OCCUPIED_ROOM_ORDER if room_name not in rooms_by_name]
     if missing:
         raise SystemExit("Missing expected apartment rooms: {0}".format(", ".join(missing)))
 
     all_room_names = [room.name for room in state.plan.rooms]
-    habitable_positions = {
+    occupied_positions = {
         room_name: representative_cell(sorted(rooms_by_name[room_name].cells))
-        for room_name in HABITABLE_ROOM_ORDER
+        for room_name in OCCUPIED_ROOM_ORDER
     }
-    latents = sample_latents(HABITABLE_ROOM_ORDER)
+    latents = sample_latents(OCCUPIED_ROOM_ORDER)
 
     cohort_agents: Dict[str, List[Dict[str, object]]] = {}
     for cohort_key in COHORTS:
         agents: List[Dict[str, object]] = []
-        for index, room_name in enumerate(HABITABLE_ROOM_ORDER, start=1):
+        for index, room_name in enumerate(OCCUPIED_ROOM_ORDER, start=1):
             agents.append(
                 build_agent_payload(
                     cohort_key=cohort_key,
                     room_name=room_name,
-                    position=habitable_positions[room_name],
+                    position=occupied_positions[room_name],
                     latent=latents[room_name],
                     agent_index=index,
                 )
@@ -337,14 +407,17 @@ def main() -> None:
                 "east/west-exposed rooms use Tr=Ta+0.75 C."
             ),
             "cohort_design": (
-                "Young mixed, young male-only, and age-shifted +50 years cohorts using the same room placement."
+                "Six cohorts share the same room placement: young mixed, young male-only, age-shifted +50 years, "
+                "higher-clo sedentary, lighter-clothing mobile, and higher-BMI warm-sensitive."
             ),
-            "occupancy_rule": "One occupant is placed in each occupied habitable room.",
+            "occupancy_rule": (
+                "One occupant is placed in each enclosed room except Entry Gallery, Service Hall, and East Passage."
+            ),
         },
         "plan": {
             "path": str(PLAN_PATH.relative_to(ROOT_DIR)),
             "template_name": state.meta.get("name"),
-            "occupied_rooms": HABITABLE_ROOM_ORDER,
+            "occupied_rooms": OCCUPIED_ROOM_ORDER,
             "room_abbreviations": ROOM_ABBREVIATIONS,
         },
         "cohorts": {
@@ -363,7 +436,7 @@ def main() -> None:
     print("Wrote study: {0}".format(STUDY_PATH))
     print("Wrote manifest: {0}".format(MANIFEST_PATH))
     print("Scenarios: {0}".format(len(scenarios)))
-    print("Agents per cohort: {0}".format(len(HABITABLE_ROOM_ORDER)))
+    print("Agents per cohort: {0}".format(len(OCCUPIED_ROOM_ORDER)))
 
 
 if __name__ == "__main__":

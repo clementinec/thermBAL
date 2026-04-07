@@ -1,385 +1,1687 @@
 {
-  "generated_at": "2026-04-07T06:15:09.432633+00:00",
+  "generated_at": "2026-04-07T07:07:23.571891+00:00",
   "plan_path": "/Users/hongshanguo/projs/thermBAL/floor_plan/apartment_template.json",
   "study_path": "/Users/hongshanguo/projs/thermBAL/cases/apartment_daytime_cooled/study.json",
-  "scenario_count": 27,
+  "scenario_count": 120,
   "scenarios": [
     {
-      "scenario_id": "young_mixed_t22p0_rh35",
-      "description": "Young Scholars Mixed at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "scenario_id": "young_mixed_t20p0_rh35",
+      "description": "Young Scholars Mixed at Ta=20.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.973,
+      "mean_pmv": -3.486,
+      "min_pmv": -5.2,
+      "max_pmv": -2.28,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t20p0_rh55",
+      "description": "Young Scholars Mixed at Ta=20.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.343,
+      "min_pmv": -5.03,
+      "max_pmv": -2.15,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t20p0_rh75",
+      "description": "Young Scholars Mixed at Ta=20.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.199,
+      "min_pmv": -4.86,
+      "max_pmv": -2.03,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t20p0_rh80",
+      "description": "Young Scholars Mixed at Ta=20.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.162,
+      "min_pmv": -4.81,
+      "max_pmv": -2.0,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t22p0_rh35",
+      "description": "Young Scholars Mixed at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.585,
       "min_pmv": -4.16,
-      "max_pmv": -2.52,
+      "max_pmv": -1.47,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t22p0_rh55",
       "description": "Young Scholars Mixed at Ta=22.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.8,
+      "mean_pmv": -2.424,
       "min_pmv": -3.97,
-      "max_pmv": -2.35,
+      "max_pmv": -1.33,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t22p0_rh75",
       "description": "Young Scholars Mixed at Ta=22.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.625,
+      "mean_pmv": -2.26,
       "min_pmv": -3.77,
-      "max_pmv": -2.18,
+      "max_pmv": -1.19,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t22p0_rh80",
+      "description": "Young Scholars Mixed at Ta=22.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.221,
+      "min_pmv": -3.72,
+      "max_pmv": -1.16,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t23p5_rh35",
       "description": "Young Scholars Mixed at Ta=23.5 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.276,
+      "mean_pmv": -1.918,
       "min_pmv": -3.37,
-      "max_pmv": -1.82,
+      "max_pmv": -0.87,
       "worst_ppd": 99.9,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t23p5_rh55",
       "description": "Young Scholars Mixed at Ta=23.5 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.087,
+      "mean_pmv": -1.738,
       "min_pmv": -3.16,
-      "max_pmv": -1.64,
+      "max_pmv": -0.71,
       "worst_ppd": 99.6,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t23p5_rh75",
       "description": "Young Scholars Mixed at Ta=23.5 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.897,
+      "mean_pmv": -1.561,
       "min_pmv": -2.95,
-      "max_pmv": -1.45,
+      "max_pmv": -0.56,
       "worst_ppd": 98.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t23p5_rh80",
+      "description": "Young Scholars Mixed at Ta=23.5 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.516,
+      "min_pmv": -2.9,
+      "max_pmv": -0.52,
+      "worst_ppd": 98.6,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t25p0_rh35",
       "description": "Young Scholars Mixed at Ta=25.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.557,
+      "mean_pmv": -1.24,
       "min_pmv": -2.58,
-      "max_pmv": -1.12,
+      "max_pmv": -0.26,
       "worst_ppd": 94.9,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t25p0_rh55",
       "description": "Young Scholars Mixed at Ta=25.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.35,
+      "mean_pmv": -1.045,
       "min_pmv": -2.35,
-      "max_pmv": -0.92,
+      "max_pmv": -0.09,
       "worst_ppd": 89.6,
       "error_records": 0
     },
     {
       "scenario_id": "young_mixed_t25p0_rh75",
       "description": "Young Scholars Mixed at Ta=25.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.145,
+      "mean_pmv": -0.851,
       "min_pmv": -2.11,
-      "max_pmv": -0.72,
+      "max_pmv": 0.07,
       "worst_ppd": 81.6,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t25p0_rh80",
+      "description": "Young Scholars Mixed at Ta=25.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.8,
+      "min_pmv": -2.06,
+      "max_pmv": 0.12,
+      "worst_ppd": 79.2,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t28p0_rh35",
+      "description": "Young Scholars Mixed at Ta=28.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.108,
+      "min_pmv": -0.97,
+      "max_pmv": 0.94,
+      "worst_ppd": 24.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t28p0_rh55",
+      "description": "Young Scholars Mixed at Ta=28.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.34,
+      "min_pmv": -0.69,
+      "max_pmv": 1.14,
+      "worst_ppd": 32.4,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t28p0_rh75",
+      "description": "Young Scholars Mixed at Ta=28.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.574,
+      "min_pmv": -0.41,
+      "max_pmv": 1.34,
+      "worst_ppd": 42.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_mixed_t28p0_rh80",
+      "description": "Young Scholars Mixed at Ta=28.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.632,
+      "min_pmv": -0.34,
+      "max_pmv": 1.39,
+      "worst_ppd": 45.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t20p0_rh35",
+      "description": "Young Scholars Male Only at Ta=20.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.198,
+      "min_pmv": -4.09,
+      "max_pmv": -2.28,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t20p0_rh55",
+      "description": "Young Scholars Male Only at Ta=20.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.059,
+      "min_pmv": -3.94,
+      "max_pmv": -2.15,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t20p0_rh75",
+      "description": "Young Scholars Male Only at Ta=20.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.92,
+      "min_pmv": -3.78,
+      "max_pmv": -2.03,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t20p0_rh80",
+      "description": "Young Scholars Male Only at Ta=20.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.884,
+      "min_pmv": -3.74,
+      "max_pmv": -2.0,
+      "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t22p0_rh35",
       "description": "Young Scholars Male Only at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.742,
+      "mean_pmv": -2.332,
       "min_pmv": -3.18,
-      "max_pmv": -2.13,
+      "max_pmv": -1.47,
       "worst_ppd": 99.7,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t22p0_rh55",
       "description": "Young Scholars Male Only at Ta=22.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.573,
+      "mean_pmv": -2.175,
       "min_pmv": -3.0,
-      "max_pmv": -1.99,
+      "max_pmv": -1.33,
       "worst_ppd": 99.1,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t22p0_rh75",
       "description": "Young Scholars Male Only at Ta=22.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.405,
+      "mean_pmv": -2.017,
       "min_pmv": -2.83,
-      "max_pmv": -1.85,
+      "max_pmv": -1.19,
       "worst_ppd": 98.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t22p0_rh80",
+      "description": "Young Scholars Male Only at Ta=22.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.978,
+      "min_pmv": -2.78,
+      "max_pmv": -1.16,
+      "worst_ppd": 97.7,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t23p5_rh35",
       "description": "Young Scholars Male Only at Ta=23.5 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.067,
+      "mean_pmv": -1.69,
       "min_pmv": -2.48,
-      "max_pmv": -1.53,
+      "max_pmv": -0.87,
       "worst_ppd": 93.1,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t23p5_rh55",
       "description": "Young Scholars Male Only at Ta=23.5 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.883,
+      "mean_pmv": -1.516,
       "min_pmv": -2.29,
-      "max_pmv": -1.38,
+      "max_pmv": -0.71,
       "worst_ppd": 88.0,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t23p5_rh75",
       "description": "Young Scholars Male Only at Ta=23.5 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.698,
+      "mean_pmv": -1.345,
       "min_pmv": -2.1,
-      "max_pmv": -1.22,
+      "max_pmv": -0.56,
       "worst_ppd": 81.1,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t23p5_rh80",
+      "description": "Young Scholars Male Only at Ta=23.5 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.301,
+      "min_pmv": -2.05,
+      "max_pmv": -0.52,
+      "worst_ppd": 79.1,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t25p0_rh35",
       "description": "Young Scholars Male Only at Ta=25.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.371,
+      "mean_pmv": -1.039,
       "min_pmv": -1.78,
-      "max_pmv": -0.93,
+      "max_pmv": -0.26,
       "worst_ppd": 66.2,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t25p0_rh55",
       "description": "Young Scholars Male Only at Ta=25.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -1.17,
+      "mean_pmv": -0.849,
       "min_pmv": -1.57,
-      "max_pmv": -0.76,
+      "max_pmv": -0.09,
       "worst_ppd": 55.0,
       "error_records": 0
     },
     {
       "scenario_id": "young_male_t25p0_rh75",
       "description": "Young Scholars Male Only at Ta=25.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -0.971,
+      "mean_pmv": -0.662,
       "min_pmv": -1.37,
-      "max_pmv": -0.59,
+      "max_pmv": 0.07,
       "worst_ppd": 43.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t25p0_rh80",
+      "description": "Young Scholars Male Only at Ta=25.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.612,
+      "min_pmv": -1.31,
+      "max_pmv": 0.12,
+      "worst_ppd": 41.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t28p0_rh35",
+      "description": "Young Scholars Male Only at Ta=28.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.256,
+      "min_pmv": -0.36,
+      "max_pmv": 0.94,
+      "worst_ppd": 23.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t28p0_rh55",
+      "description": "Young Scholars Male Only at Ta=28.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.481,
+      "min_pmv": -0.11,
+      "max_pmv": 1.14,
+      "worst_ppd": 32.4,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t28p0_rh75",
+      "description": "Young Scholars Male Only at Ta=28.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.707,
+      "min_pmv": 0.13,
+      "max_pmv": 1.34,
+      "worst_ppd": 42.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "young_male_t28p0_rh80",
+      "description": "Young Scholars Male Only at Ta=28.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.765,
+      "min_pmv": 0.2,
+      "max_pmv": 1.39,
+      "worst_ppd": 45.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t20p0_rh35",
+      "description": "Age-Shifted +50 Years at Ta=20.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -5.167,
+      "min_pmv": -7.42,
+      "max_pmv": -3.48,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t20p0_rh55",
+      "description": "Age-Shifted +50 Years at Ta=20.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -4.997,
+      "min_pmv": -7.22,
+      "max_pmv": -3.34,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t20p0_rh75",
+      "description": "Age-Shifted +50 Years at Ta=20.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -4.826,
+      "min_pmv": -7.01,
+      "max_pmv": -3.19,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t20p0_rh80",
+      "description": "Age-Shifted +50 Years at Ta=20.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -4.785,
+      "min_pmv": -6.96,
+      "max_pmv": -3.15,
+      "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t22p0_rh35",
       "description": "Age-Shifted +50 Years at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -4.499,
+      "mean_pmv": -4.066,
       "min_pmv": -6.15,
-      "max_pmv": -3.74,
+      "max_pmv": -2.58,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t22p0_rh55",
       "description": "Age-Shifted +50 Years at Ta=22.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -4.295,
+      "mean_pmv": -3.872,
       "min_pmv": -5.91,
-      "max_pmv": -3.55,
+      "max_pmv": -2.41,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t22p0_rh75",
       "description": "Age-Shifted +50 Years at Ta=22.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -4.092,
+      "mean_pmv": -3.68,
       "min_pmv": -5.68,
-      "max_pmv": -3.35,
+      "max_pmv": -2.25,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t22p0_rh80",
+      "description": "Age-Shifted +50 Years at Ta=22.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.63,
+      "min_pmv": -5.63,
+      "max_pmv": -2.21,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t23p5_rh35",
       "description": "Age-Shifted +50 Years at Ta=23.5 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -3.653,
+      "mean_pmv": -3.243,
       "min_pmv": -5.18,
-      "max_pmv": -2.91,
+      "max_pmv": -1.84,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t23p5_rh55",
       "description": "Age-Shifted +50 Years at Ta=23.5 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -3.431,
+      "mean_pmv": -3.032,
       "min_pmv": -4.93,
-      "max_pmv": -2.7,
+      "max_pmv": -1.66,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t23p5_rh75",
       "description": "Age-Shifted +50 Years at Ta=23.5 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -3.207,
+      "mean_pmv": -2.822,
       "min_pmv": -4.67,
-      "max_pmv": -2.48,
+      "max_pmv": -1.48,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t23p5_rh80",
+      "description": "Age-Shifted +50 Years at Ta=23.5 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.769,
+      "min_pmv": -4.61,
+      "max_pmv": -1.44,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t25p0_rh35",
       "description": "Age-Shifted +50 Years at Ta=25.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.78,
+      "mean_pmv": -2.415,
       "min_pmv": -4.2,
-      "max_pmv": -2.08,
+      "max_pmv": -1.11,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t25p0_rh55",
       "description": "Age-Shifted +50 Years at Ta=25.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.538,
+      "mean_pmv": -2.184,
       "min_pmv": -3.93,
-      "max_pmv": -1.85,
+      "max_pmv": -0.91,
       "worst_ppd": 100.0,
       "error_records": 0
     },
     {
       "scenario_id": "older_shift_t25p0_rh75",
       "description": "Age-Shifted +50 Years at Ta=25.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
-      "records": 12,
-      "agents": 12,
+      "records": 21,
+      "agents": 21,
       "times": [
         0.0
       ],
-      "mean_pmv": -2.292,
+      "mean_pmv": -1.952,
       "min_pmv": -3.65,
-      "max_pmv": -1.61,
+      "max_pmv": -0.71,
       "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t25p0_rh80",
+      "description": "Age-Shifted +50 Years at Ta=25.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.896,
+      "min_pmv": -3.58,
+      "max_pmv": -0.67,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t28p0_rh35",
+      "description": "Age-Shifted +50 Years at Ta=28.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.761,
+      "min_pmv": -2.22,
+      "max_pmv": 0.36,
+      "worst_ppd": 85.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t28p0_rh55",
+      "description": "Age-Shifted +50 Years at Ta=28.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.485,
+      "min_pmv": -1.89,
+      "max_pmv": 0.6,
+      "worst_ppd": 71.6,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t28p0_rh75",
+      "description": "Age-Shifted +50 Years at Ta=28.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.211,
+      "min_pmv": -1.56,
+      "max_pmv": 0.83,
+      "worst_ppd": 54.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "older_shift_t28p0_rh80",
+      "description": "Age-Shifted +50 Years at Ta=28.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.143,
+      "min_pmv": -1.48,
+      "max_pmv": 0.89,
+      "worst_ppd": 49.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t20p0_rh35",
+      "description": "Higher Clo, Sedentary at Ta=20.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.768,
+      "min_pmv": -3.78,
+      "max_pmv": -2.23,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t20p0_rh55",
+      "description": "Higher Clo, Sedentary at Ta=20.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.611,
+      "min_pmv": -3.61,
+      "max_pmv": -2.08,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t20p0_rh75",
+      "description": "Higher Clo, Sedentary at Ta=20.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.458,
+      "min_pmv": -3.45,
+      "max_pmv": -1.93,
+      "worst_ppd": 99.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t20p0_rh80",
+      "description": "Higher Clo, Sedentary at Ta=20.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.418,
+      "min_pmv": -3.41,
+      "max_pmv": -1.89,
+      "worst_ppd": 99.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t22p0_rh35",
+      "description": "Higher Clo, Sedentary at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.997,
+      "min_pmv": -2.92,
+      "max_pmv": -1.48,
+      "worst_ppd": 98.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t22p0_rh55",
+      "description": "Higher Clo, Sedentary at Ta=22.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.82,
+      "min_pmv": -2.73,
+      "max_pmv": -1.32,
+      "worst_ppd": 97.1,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t22p0_rh75",
+      "description": "Higher Clo, Sedentary at Ta=22.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.646,
+      "min_pmv": -2.54,
+      "max_pmv": -1.15,
+      "worst_ppd": 94.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t22p0_rh80",
+      "description": "Higher Clo, Sedentary at Ta=22.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.601,
+      "min_pmv": -2.5,
+      "max_pmv": -1.11,
+      "worst_ppd": 93.4,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t23p5_rh35",
+      "description": "Higher Clo, Sedentary at Ta=23.5 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.418,
+      "min_pmv": -2.26,
+      "max_pmv": -0.9,
+      "worst_ppd": 87.1,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t23p5_rh55",
+      "description": "Higher Clo, Sedentary at Ta=23.5 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.225,
+      "min_pmv": -2.06,
+      "max_pmv": -0.72,
+      "worst_ppd": 79.4,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t23p5_rh75",
+      "description": "Higher Clo, Sedentary at Ta=23.5 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.034,
+      "min_pmv": -1.86,
+      "max_pmv": -0.54,
+      "worst_ppd": 69.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t23p5_rh80",
+      "description": "Higher Clo, Sedentary at Ta=23.5 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.985,
+      "min_pmv": -1.81,
+      "max_pmv": -0.49,
+      "worst_ppd": 67.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t25p0_rh35",
+      "description": "Higher Clo, Sedentary at Ta=25.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.828,
+      "min_pmv": -1.6,
+      "max_pmv": -0.32,
+      "worst_ppd": 56.6,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t25p0_rh55",
+      "description": "Higher Clo, Sedentary at Ta=25.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.618,
+      "min_pmv": -1.38,
+      "max_pmv": -0.12,
+      "worst_ppd": 44.6,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t25p0_rh75",
+      "description": "Higher Clo, Sedentary at Ta=25.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.408,
+      "min_pmv": -1.16,
+      "max_pmv": 0.07,
+      "worst_ppd": 33.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t25p0_rh80",
+      "description": "Higher Clo, Sedentary at Ta=25.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.355,
+      "min_pmv": -1.1,
+      "max_pmv": 0.12,
+      "worst_ppd": 30.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t28p0_rh35",
+      "description": "Higher Clo, Sedentary at Ta=28.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.339,
+      "min_pmv": -0.27,
+      "max_pmv": 0.82,
+      "worst_ppd": 19.1,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t28p0_rh55",
+      "description": "Higher Clo, Sedentary at Ta=28.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.591,
+      "min_pmv": -0.0,
+      "max_pmv": 1.05,
+      "worst_ppd": 28.4,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t28p0_rh75",
+      "description": "Higher Clo, Sedentary at Ta=28.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.842,
+      "min_pmv": 0.26,
+      "max_pmv": 1.29,
+      "worst_ppd": 39.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_clo_sedentary_t28p0_rh80",
+      "description": "Higher Clo, Sedentary at Ta=28.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.905,
+      "min_pmv": 0.33,
+      "max_pmv": 1.35,
+      "worst_ppd": 42.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t20p0_rh35",
+      "description": "Light Clothing, Mobile at Ta=20.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.733,
+      "min_pmv": -4.56,
+      "max_pmv": -1.48,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t20p0_rh55",
+      "description": "Light Clothing, Mobile at Ta=20.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.618,
+      "min_pmv": -4.42,
+      "max_pmv": -1.39,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t20p0_rh75",
+      "description": "Light Clothing, Mobile at Ta=20.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.5,
+      "min_pmv": -4.27,
+      "max_pmv": -1.29,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t20p0_rh80",
+      "description": "Light Clothing, Mobile at Ta=20.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.47,
+      "min_pmv": -4.24,
+      "max_pmv": -1.27,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t22p0_rh35",
+      "description": "Light Clothing, Mobile at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.928,
+      "min_pmv": -3.58,
+      "max_pmv": -0.82,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t22p0_rh55",
+      "description": "Light Clothing, Mobile at Ta=22.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.796,
+      "min_pmv": -3.41,
+      "max_pmv": -0.72,
+      "worst_ppd": 99.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t22p0_rh75",
+      "description": "Light Clothing, Mobile at Ta=22.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.664,
+      "min_pmv": -3.25,
+      "max_pmv": -0.61,
+      "worst_ppd": 99.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t22p0_rh80",
+      "description": "Light Clothing, Mobile at Ta=22.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.633,
+      "min_pmv": -3.21,
+      "max_pmv": -0.58,
+      "worst_ppd": 99.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t23p5_rh35",
+      "description": "Light Clothing, Mobile at Ta=23.5 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.329,
+      "min_pmv": -2.83,
+      "max_pmv": -0.33,
+      "worst_ppd": 98.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t23p5_rh55",
+      "description": "Light Clothing, Mobile at Ta=23.5 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.184,
+      "min_pmv": -2.65,
+      "max_pmv": -0.21,
+      "worst_ppd": 96.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t23p5_rh75",
+      "description": "Light Clothing, Mobile at Ta=23.5 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.04,
+      "min_pmv": -2.47,
+      "max_pmv": -0.1,
+      "worst_ppd": 92.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t23p5_rh80",
+      "description": "Light Clothing, Mobile at Ta=23.5 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.004,
+      "min_pmv": -2.42,
+      "max_pmv": -0.07,
+      "worst_ppd": 91.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t25p0_rh35",
+      "description": "Light Clothing, Mobile at Ta=25.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.723,
+      "min_pmv": -2.07,
+      "max_pmv": 0.16,
+      "worst_ppd": 79.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t25p0_rh55",
+      "description": "Light Clothing, Mobile at Ta=25.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.564,
+      "min_pmv": -1.88,
+      "max_pmv": 0.29,
+      "worst_ppd": 70.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t25p0_rh75",
+      "description": "Light Clothing, Mobile at Ta=25.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.406,
+      "min_pmv": -1.68,
+      "max_pmv": 0.42,
+      "worst_ppd": 60.6,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t25p0_rh80",
+      "description": "Light Clothing, Mobile at Ta=25.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.367,
+      "min_pmv": -1.63,
+      "max_pmv": 0.45,
+      "worst_ppd": 57.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t28p0_rh35",
+      "description": "Light Clothing, Mobile at Ta=28.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.479,
+      "min_pmv": -0.54,
+      "max_pmv": 1.14,
+      "worst_ppd": 32.3,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t28p0_rh55",
+      "description": "Light Clothing, Mobile at Ta=28.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.666,
+      "min_pmv": -0.3,
+      "max_pmv": 1.29,
+      "worst_ppd": 39.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t28p0_rh75",
+      "description": "Light Clothing, Mobile at Ta=28.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.857,
+      "min_pmv": -0.07,
+      "max_pmv": 1.45,
+      "worst_ppd": 48.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "lighter_clothing_mobile_t28p0_rh80",
+      "description": "Light Clothing, Mobile at Ta=28.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.903,
+      "min_pmv": -0.01,
+      "max_pmv": 1.48,
+      "worst_ppd": 50.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t20p0_rh35",
+      "description": "Higher BMI, Warm Sensitive at Ta=20.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.939,
+      "min_pmv": -5.66,
+      "max_pmv": -2.66,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t20p0_rh55",
+      "description": "Higher BMI, Warm Sensitive at Ta=20.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.795,
+      "min_pmv": -5.49,
+      "max_pmv": -2.54,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t20p0_rh75",
+      "description": "Higher BMI, Warm Sensitive at Ta=20.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.653,
+      "min_pmv": -5.32,
+      "max_pmv": -2.42,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t20p0_rh80",
+      "description": "Higher BMI, Warm Sensitive at Ta=20.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -3.616,
+      "min_pmv": -5.28,
+      "max_pmv": -2.38,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t22p0_rh35",
+      "description": "Higher BMI, Warm Sensitive at Ta=22.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.969,
+      "min_pmv": -4.56,
+      "max_pmv": -1.83,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t22p0_rh55",
+      "description": "Higher BMI, Warm Sensitive at Ta=22.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.806,
+      "min_pmv": -4.37,
+      "max_pmv": -1.69,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t22p0_rh75",
+      "description": "Higher BMI, Warm Sensitive at Ta=22.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.645,
+      "min_pmv": -4.18,
+      "max_pmv": -1.55,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t22p0_rh80",
+      "description": "Higher BMI, Warm Sensitive at Ta=22.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.605,
+      "min_pmv": -4.13,
+      "max_pmv": -1.51,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t23p5_rh35",
+      "description": "Higher BMI, Warm Sensitive at Ta=23.5 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.245,
+      "min_pmv": -3.73,
+      "max_pmv": -1.17,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t23p5_rh55",
+      "description": "Higher BMI, Warm Sensitive at Ta=23.5 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -2.068,
+      "min_pmv": -3.52,
+      "max_pmv": -1.02,
+      "worst_ppd": 100.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t23p5_rh75",
+      "description": "Higher BMI, Warm Sensitive at Ta=23.5 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.89,
+      "min_pmv": -3.31,
+      "max_pmv": -0.86,
+      "worst_ppd": 99.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t23p5_rh80",
+      "description": "Higher BMI, Warm Sensitive at Ta=23.5 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.848,
+      "min_pmv": -3.25,
+      "max_pmv": -0.83,
+      "worst_ppd": 99.8,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t25p0_rh35",
+      "description": "Higher BMI, Warm Sensitive at Ta=25.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.515,
+      "min_pmv": -2.88,
+      "max_pmv": -0.51,
+      "worst_ppd": 98.5,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t25p0_rh55",
+      "description": "Higher BMI, Warm Sensitive at Ta=25.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.32,
+      "min_pmv": -2.65,
+      "max_pmv": -0.34,
+      "worst_ppd": 96.1,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t25p0_rh75",
+      "description": "Higher BMI, Warm Sensitive at Ta=25.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.127,
+      "min_pmv": -2.42,
+      "max_pmv": -0.18,
+      "worst_ppd": 91.7,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t25p0_rh80",
+      "description": "Higher BMI, Warm Sensitive at Ta=25.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -1.081,
+      "min_pmv": -2.37,
+      "max_pmv": -0.14,
+      "worst_ppd": 90.2,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t28p0_rh35",
+      "description": "Higher BMI, Warm Sensitive at Ta=28.0 C, RH=35% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": -0.066,
+      "min_pmv": -1.17,
+      "max_pmv": 0.8,
+      "worst_ppd": 34.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t28p0_rh55",
+      "description": "Higher BMI, Warm Sensitive at Ta=28.0 C, RH=55% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.165,
+      "min_pmv": -0.9,
+      "max_pmv": 1.0,
+      "worst_ppd": 25.9,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t28p0_rh75",
+      "description": "Higher BMI, Warm Sensitive at Ta=28.0 C, RH=75% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.398,
+      "min_pmv": -0.62,
+      "max_pmv": 1.19,
+      "worst_ppd": 35.0,
+      "error_records": 0
+    },
+    {
+      "scenario_id": "higher_bmi_warm_sensitive_t28p0_rh80",
+      "description": "Higher BMI, Warm Sensitive at Ta=28.0 C, RH=80% with south-facing rooms at Tr=Ta+1.5 C, east/west-exposed rooms at Tr=Ta+0.75 C, north/interior rooms at Tr=Ta.",
+      "records": 21,
+      "agents": 21,
+      "times": [
+        0.0
+      ],
+      "mean_pmv": 0.455,
+      "min_pmv": -0.56,
+      "max_pmv": 1.24,
+      "worst_ppd": 37.4,
       "error_records": 0
     }
   ],

@@ -42,13 +42,25 @@ def clamp(value: float, lower: float, upper: float) -> float:
     return max(lower, min(upper, value))
 
 
-def color_for_ppd(ppd: float | None) -> str:
-    if ppd is None:
+def color_for_thermal_state(pmv: float | None, ppd: float | None) -> str:
+    if pmv is None:
         return "#f2eee7"
-    t = clamp(ppd / 100.0, 0.0, 1.0)
-    hue = 118.0 - 118.0 * t
-    sat = 62.0 + 8.0 * t
-    light = 93.0 - 44.0 * t
+
+    risk = clamp((ppd or 0.0) / 100.0, 0.0, 1.0)
+    magnitude = clamp(abs(pmv) / 3.0, 0.0, 1.0)
+    severity = clamp(0.58 * magnitude + 0.42 * risk, 0.0, 1.0)
+
+    if abs(pmv) < 0.18 and risk < 0.12:
+        return "#e8e1d4"
+
+    if pmv < 0:
+        hue = 208.0
+        sat = 24.0 + 52.0 * severity
+        light = 95.0 - 50.0 * severity
+    else:
+        hue = 18.0
+        sat = 26.0 + 56.0 * severity
+        light = 95.0 - 50.0 * severity
     return "hsl({0:.0f} {1:.0f}% {2:.0f}%)".format(hue, sat, light)
 
 
@@ -78,7 +90,14 @@ def room_bbox(cells: Iterable[Tuple[int, int]]) -> Tuple[int, int, int, int]:
 
 
 def scenario_sort_key(meta: Dict[str, object]) -> Tuple[int, float, float]:
-    cohort_order = {"young_mixed": 0, "young_male": 1, "older_shift": 2}
+    cohort_order = {
+        "young_mixed": 0,
+        "young_male": 1,
+        "older_shift": 2,
+        "higher_clo_sedentary": 3,
+        "lighter_clothing_mobile": 4,
+        "higher_bmi_warm_sensitive": 5,
+    }
     return (
         cohort_order.get(str(meta["cohort"]), 99),
         float(meta["base_ta_c"]),
@@ -119,7 +138,10 @@ def render_plan_svg(
         if exposure_mode:
             fill = exposure_color(exposure_by_room.get(name, "unoccupied"))
         else:
-            fill = color_for_ppd(ppd if name in occupied_rooms else None)
+            fill = color_for_thermal_state(
+                pmv if name in occupied_rooms else None,
+                ppd if name in occupied_rooms else None,
+            )
 
         tooltip_parts = [name]
         if name in occupied_rooms and ppd is not None:
@@ -195,6 +217,7 @@ def render_metric_table(
     temperatures: List[float],
     humidities: List[float],
     summary_by_scenario: Dict[str, Dict[str, str]],
+    mean_pmv_by_scenario: Dict[str, float],
     mean_ppd_by_scenario: Dict[str, float],
     scenario_meta: Dict[str, Dict[str, object]],
 ) -> str:
@@ -216,13 +239,15 @@ def render_metric_table(
                 if meta["cohort"] == cohort_key and float(meta["base_ta_c"]) == ta and float(meta["base_rh_pct"]) == rh
             )
             summary = summary_by_scenario[scenario_id]
+            mean_pmv = mean_pmv_by_scenario.get(scenario_id, 0.0)
             mean_ppd = mean_ppd_by_scenario.get(scenario_id, 0.0)
             worst_ppd = as_float(summary["worst_ppd"])
             rows.append(
-                '<td style="background:{0}"><strong>{1:.1f}%</strong><span>Worst {2:.1f}%</span></td>'.format(
-                    color_for_ppd(mean_ppd),
+                '<td style="background:{0}"><strong>{1:.1f}%</strong><span>Worst {2:.1f}% · PMV {3:.2f}</span></td>'.format(
+                    color_for_thermal_state(mean_pmv, mean_ppd),
                     mean_ppd,
                     worst_ppd,
+                    mean_pmv,
                 )
             )
         rows.append("</tr>")
@@ -271,6 +296,10 @@ def main() -> None:
     mean_ppd_by_scenario = {
         scenario_id: mean(values) if values else 0.0
         for scenario_id, values in ppd_values_by_scenario.items()
+    }
+    mean_pmv_by_scenario = {
+        row["scenario_id"]: as_float(row["mean_pmv"])
+        for row in summary_rows
     }
 
     room_metrics_by_scenario: Dict[str, Dict[str, Dict[str, float]]] = {}
@@ -352,6 +381,7 @@ def main() -> None:
             temperatures=temperatures,
             humidities=humidities,
             summary_by_scenario=summary_by_scenario,
+            mean_pmv_by_scenario=mean_pmv_by_scenario,
             mean_ppd_by_scenario=mean_ppd_by_scenario,
             scenario_meta=scenario_meta,
         )
@@ -531,6 +561,32 @@ def main() -> None:
       color: var(--muted);
       font-size: 11px;
     }}
+    .thermal-legend {{
+      display: grid;
+      gap: 6px;
+      margin: 10px 0 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fffcf8;
+      font-size: 12px;
+    }}
+    .swatch-row {{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }}
+    .swatch {{
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(33, 29, 26, 0.16);
+      flex: 0 0 auto;
+    }}
+    .legend-note {{
+      color: var(--muted);
+      line-height: 1.45;
+    }}
     .panel {{
       padding: 18px 20px;
       margin-bottom: 20px;
@@ -614,7 +670,7 @@ def main() -> None:
   <div class="page">
     <section class="hero">
       <h1>{title}</h1>
-      <p>Deterministic apartment population sweep using the traced apartment template, three occupant cohorts, and a daytime cooled room-environment matrix with orientation-based MRT offsets.</p>
+      <p>Deterministic apartment population sweep using the traced apartment template, multiple occupant cohorts, and a daytime cooled room-environment matrix with orientation-based MRT offsets.</p>
       <div class="hero-grid">
         <div>
           {reference_plan}
@@ -624,6 +680,12 @@ def main() -> None:
             <h2 style="font-size:14px; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent);">Case Setup</h2>
             <p class="muted">{orientation} {operation}</p>
             <p class="muted">{thermal_model}</p>
+            <div class="thermal-legend">
+              <div class="swatch-row"><span class="swatch" style="background:#6f9dcb"></span><span>Cold-side stress: PMV &lt; 0</span></div>
+              <div class="swatch-row"><span class="swatch" style="background:#e8e1d4"></span><span>Near-neutral: PMV around 0</span></div>
+              <div class="swatch-row"><span class="swatch" style="background:#e38c69"></span><span>Hot-side stress: PMV &gt; 0</span></div>
+              <div class="legend-note">Plan fills use PMV sign for hue, with shade deepening as discomfort severity increases.</div>
+            </div>
             <table class="legend-table">
               <thead><tr><th>Tag</th><th>Occupied Room</th><th>Exposure Rule</th></tr></thead>
               <tbody>{legend_rows}</tbody>
