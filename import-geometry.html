@@ -242,11 +242,12 @@ const FOOTPRINT_DETECT = {
   minComponentCells: 2,
   keepComponentRatio: 0.08
 };
+const WALL_DRAG_LOCK_PX = 8;
 
 const TOOL_HINTS = {
   select:'Select rooms to rename them and inspect the traced zoning.',
   floor:'Confirm or refine the occupiable footprint. Drag across empty cells to add them and across active cells to erase.',
-  wall:'Draw interior partition walls on grid edges to create enclosed rooms. Each drag stroke stays locked to its starting orientation.',
+  wall:'Draw interior partition walls on grid edges to create enclosed rooms. Drag direction now sets the stroke orientation after a short threshold.',
   window:'Place windows on traced wall edges.',
   door:'Place door openings on traced wall edges.',
   exit:'Place exit openings on exterior wall edges.',
@@ -270,6 +271,9 @@ let floorDrawValue = true;
 let isDrawingWall = false;
 let wallDrawValue = true;
 let drawEdgeOrient = null;
+let drawStartPx = null;
+let drawStartPy = null;
+let drawStartEdge = null;
 let hoverCell = null;
 let hoverEdge = null;
 let hoverValid = false;
@@ -860,7 +864,12 @@ function sendToSimulator() {
 
 function setTool(tool) {
   currentTool = tool;
-  if(tool !== 'wall' && tool !== 'erase') drawEdgeOrient = null;
+  if(tool !== 'wall' && tool !== 'erase') {
+    drawEdgeOrient = null;
+    drawStartPx = null;
+    drawStartPy = null;
+    drawStartEdge = null;
+  }
   hoverCell = null;
   hoverEdge = null;
   hoverValid = false;
@@ -1355,6 +1364,31 @@ function nearestEdgeForOrient(px, py, orient) {
   return fracX <= 0.5 ? { orient:'v', r:cellY, c:cellX } : { orient:'v', r:cellY, c:cellX + 1 };
 }
 
+function lockWallOrientation(px, py) {
+  if(drawEdgeOrient || drawStartPx === null || drawStartPy === null) return false;
+  const dx = px - drawStartPx;
+  const dy = py - drawStartPy;
+  if(Math.hypot(dx, dy) < WALL_DRAG_LOCK_PX) return false;
+
+  const nextOrient = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v';
+  drawEdgeOrient = nextOrient;
+
+  if(!drawStartEdge || drawStartEdge.orient === nextOrient) return true;
+
+  let changed = setEdgeWall(drawStartEdge, !wallDrawValue);
+  const alignedStartEdge = resolveEdgeForTool(drawStartPx, drawStartPy, 'wall', nextOrient);
+  if(edgeTouchesActiveCell(alignedStartEdge)) {
+    changed = setEdgeWall(alignedStartEdge, wallDrawValue) || changed;
+    drawStartEdge = alignedStartEdge;
+  }
+  if(changed) {
+    cleanupFeatures();
+    detectRooms();
+    update();
+  }
+  return true;
+}
+
 function edgePixelDistance(edge, px, py) {
   if(edge.orient === 'h') {
     const x1 = edge.c * CELL;
@@ -1521,7 +1555,10 @@ canvas.addEventListener('mousedown', event => {
       detectRooms();
       update();
     }
-    drawEdgeOrient = edge.orient;
+    drawEdgeOrient = null;
+    drawStartPx = px;
+    drawStartPy = py;
+    drawStartEdge = edge;
     isDrawingWall = true;
     return;
   }
@@ -1539,6 +1576,9 @@ canvas.addEventListener('mousedown', event => {
       update();
     }
     drawEdgeOrient = edge.orient;
+    drawStartPx = px;
+    drawStartPy = py;
+    drawStartEdge = edge;
     isDrawingWall = true;
     wallDrawValue = false;
     return;
@@ -1571,6 +1611,13 @@ canvas.addEventListener('mousemove', event => {
   }
 
   if(isDrawingWall && (currentTool === 'wall' || currentTool === 'erase')) {
+    if(currentTool === 'wall' && !drawEdgeOrient) {
+      lockWallOrientation(px, py);
+      if(!drawEdgeOrient) {
+        if(hoverChanged) render();
+        return;
+      }
+    }
     const edge = resolveEdgeForTool(px, py, currentTool, drawEdgeOrient);
     let changed = false;
     if(currentTool === 'erase') changed = removeFeatureAt(edge) || changed;
@@ -1591,12 +1638,18 @@ canvas.addEventListener('mouseup', () => {
   isPaintingFloor = false;
   isDrawingWall = false;
   drawEdgeOrient = null;
+  drawStartPx = null;
+  drawStartPy = null;
+  drawStartEdge = null;
 });
 
 canvas.addEventListener('mouseleave', () => {
   isPaintingFloor = false;
   isDrawingWall = false;
   drawEdgeOrient = null;
+  drawStartPx = null;
+  drawStartPy = null;
+  drawStartEdge = null;
   hoverCell = null;
   hoverEdge = null;
   hoverValid = false;
