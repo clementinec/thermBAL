@@ -1,0 +1,447 @@
+{
+  "case_id": "office_topology_compare",
+  "title": "Office Topology Comparison on Shared Apartment Footprint",
+  "seed": 20260408,
+  "templates": {
+    "cellular_office": "floor_plan/office_cellular_template.json",
+    "open_office": "floor_plan/office_openplan_template.json"
+  },
+  "assumptions": {
+    "orientation": "Bottom of plan is south.",
+    "operation": "Daytime cooled office condition.",
+    "comparison_logic": "The same perimeter-to-window thermal field is applied to both topologies. Cellular office rooms receive room-mean field values; the open office keeps the field positionally resolved.",
+    "field_model": "Perimeter, window, and south-window depth decay control Ta and MRT. At 25 C air temperature, near-window MRT can rise above 27 C at peak exposed edges, while the core stays closer to air temperature.",
+    "occupancy_rule": "Deterministic desk/sample points are placed across the same shared work cells in both topologies so the comparison isolates topology and field resolution."
+  },
+  "cohorts": {
+    "realistic_mixed": {
+      "label": "Realistic Mixed Office",
+      "description": "Mixed office cohort with male/female dress differences, ages concentrated in the 20s to 50s.",
+      "sex_mode": "mixed",
+      "male_share": 0.45,
+      "age_mean": 40.0,
+      "age_sd": 6.0,
+      "age_min": 28.0,
+      "age_max": 58.0,
+      "male_clo": 1.0,
+      "female_clo": 0.72,
+      "bmi_shift": 0.0
+    },
+    "default_male_35": {
+      "label": "Default Male Baseline",
+      "description": "Male-only baseline cohort fixed around age 35 with typical long-sleeve office clothing.",
+      "sex_mode": "male",
+      "male_share": 1.0,
+      "age_mean": 35.0,
+      "age_sd": 0.0,
+      "age_min": 35.0,
+      "age_max": 35.0,
+      "male_clo": 1.0,
+      "female_clo": 1.0,
+      "bmi_shift": 0.0
+    },
+    "realistic_male": {
+      "label": "Realistic Male Office",
+      "description": "Male-only office cohort with realistic age and body variation but the same typical long-sleeve office clothing.",
+      "sex_mode": "male",
+      "male_share": 1.0,
+      "age_mean": 40.0,
+      "age_sd": 6.0,
+      "age_min": 28.0,
+      "age_max": 58.0,
+      "male_clo": 1.0,
+      "female_clo": 1.0,
+      "bmi_shift": 0.1
+    },
+    "female_light": {
+      "label": "Female Light Office",
+      "description": "Female office cohort with lighter summer office attire and lower clothing insulation than the male formal group.",
+      "sex_mode": "female",
+      "male_share": 0.0,
+      "age_mean": 34.0,
+      "age_sd": 6.0,
+      "age_min": 24.0,
+      "age_max": 52.0,
+      "male_clo": 0.72,
+      "female_clo": 0.68,
+      "bmi_shift": -0.1
+    },
+    "older_mixed": {
+      "label": "Older Mixed Office",
+      "description": "Mixed office cohort shifted into late-career ages while preserving the same sex-weighted clothing logic.",
+      "sex_mode": "mixed",
+      "male_share": 0.55,
+      "age_mean": 61.0,
+      "age_sd": 4.5,
+      "age_min": 54.0,
+      "age_max": 72.0,
+      "male_clo": 1.04,
+      "female_clo": 0.78,
+      "bmi_shift": 0.35
+    },
+    "older_male_formal": {
+      "label": "Older Male Formal",
+      "description": "Older male office cohort in higher-clo formal dress, representing the cold-sensitive end of office populations.",
+      "sex_mode": "male",
+      "male_share": 1.0,
+      "age_mean": 64.0,
+      "age_sd": 4.0,
+      "age_min": 58.0,
+      "age_max": 74.0,
+      "male_clo": 1.06,
+      "female_clo": 1.06,
+      "bmi_shift": 0.45
+    },
+    "older_female_light": {
+      "label": "Older Female Light",
+      "description": "Older female office cohort in lighter business-casual dress, contrasting against the older male formal profile.",
+      "sex_mode": "female",
+      "male_share": 0.0,
+      "age_mean": 63.0,
+      "age_sd": 4.0,
+      "age_min": 56.0,
+      "age_max": 74.0,
+      "male_clo": 0.78,
+      "female_clo": 0.74,
+      "bmi_shift": 0.2
+    }
+  },
+  "sample_points": [
+    {
+      "sample_id": "RE_01",
+      "source_room": "Reception",
+      "cell": [
+        4,
+        4
+      ]
+    },
+    {
+      "sample_id": "RE_02",
+      "source_room": "Reception",
+      "cell": [
+        3,
+        6
+      ]
+    },
+    {
+      "sample_id": "AB_01",
+      "source_room": "Admin Bay",
+      "cell": [
+        7,
+        5
+      ]
+    },
+    {
+      "sample_id": "AB_02",
+      "source_room": "Admin Bay",
+      "cell": [
+        5,
+        7
+      ]
+    },
+    {
+      "sample_id": "AB_03",
+      "source_room": "Admin Bay",
+      "cell": [
+        9,
+        7
+      ]
+    },
+    {
+      "sample_id": "TW_01",
+      "source_room": "Team Office West",
+      "cell": [
+        10,
+        3
+      ]
+    },
+    {
+      "sample_id": "TW_02",
+      "source_room": "Team Office West",
+      "cell": [
+        14,
+        3
+      ]
+    },
+    {
+      "sample_id": "TW_03",
+      "source_room": "Team Office West",
+      "cell": [
+        12,
+        5
+      ]
+    },
+    {
+      "sample_id": "TW_04",
+      "source_room": "Team Office West",
+      "cell": [
+        10,
+        7
+      ]
+    },
+    {
+      "sample_id": "TE_01",
+      "source_room": "Team Office East",
+      "cell": [
+        17,
+        3
+      ]
+    },
+    {
+      "sample_id": "TE_02",
+      "source_room": "Team Office East",
+      "cell": [
+        20,
+        5
+      ]
+    },
+    {
+      "sample_id": "TE_03",
+      "source_room": "Team Office East",
+      "cell": [
+        17,
+        7
+      ]
+    },
+    {
+      "sample_id": "TE_04",
+      "source_room": "Team Office East",
+      "cell": [
+        23,
+        7
+      ]
+    },
+    {
+      "sample_id": "EO_01",
+      "source_room": "Executive Office",
+      "cell": [
+        28,
+        3
+      ]
+    },
+    {
+      "sample_id": "EO_02",
+      "source_room": "Executive Office",
+      "cell": [
+        28,
+        6
+      ]
+    },
+    {
+      "sample_id": "EO_03",
+      "source_room": "Executive Office",
+      "cell": [
+        27,
+        9
+      ]
+    },
+    {
+      "sample_id": "FR_01",
+      "source_room": "Focus Room",
+      "cell": [
+        25,
+        5
+      ]
+    },
+    {
+      "sample_id": "FR_02",
+      "source_room": "Focus Room",
+      "cell": [
+        24,
+        7
+      ]
+    },
+    {
+      "sample_id": "PH_01",
+      "source_room": "Print Hub",
+      "cell": [
+        4,
+        8
+      ]
+    },
+    {
+      "sample_id": "PH_02",
+      "source_room": "Print Hub",
+      "cell": [
+        3,
+        11
+      ]
+    },
+    {
+      "sample_id": "CW_01",
+      "source_room": "Collaboration West",
+      "cell": [
+        10,
+        8
+      ]
+    },
+    {
+      "sample_id": "CW_02",
+      "source_room": "Collaboration West",
+      "cell": [
+        12,
+        10
+      ]
+    },
+    {
+      "sample_id": "CW_03",
+      "source_room": "Collaboration West",
+      "cell": [
+        15,
+        11
+      ]
+    },
+    {
+      "sample_id": "CE_01",
+      "source_room": "Collaboration East",
+      "cell": [
+        21,
+        8
+      ]
+    },
+    {
+      "sample_id": "CE_02",
+      "source_room": "Collaboration East",
+      "cell": [
+        19,
+        10
+      ]
+    },
+    {
+      "sample_id": "CE_03",
+      "source_room": "Collaboration East",
+      "cell": [
+        16,
+        11
+      ]
+    },
+    {
+      "sample_id": "MW_01",
+      "source_room": "Meeting Room West",
+      "cell": [
+        8,
+        10
+      ]
+    },
+    {
+      "sample_id": "MW_02",
+      "source_room": "Meeting Room West",
+      "cell": [
+        7,
+        12
+      ]
+    },
+    {
+      "sample_id": "ME_01",
+      "source_room": "Meeting Room East",
+      "cell": [
+        25,
+        10
+      ]
+    },
+    {
+      "sample_id": "ME_02",
+      "source_room": "Meeting Room East",
+      "cell": [
+        24,
+        12
+      ]
+    },
+    {
+      "sample_id": "SW_01",
+      "source_room": "South Studio West",
+      "cell": [
+        14,
+        13
+      ]
+    },
+    {
+      "sample_id": "SW_02",
+      "source_room": "South Studio West",
+      "cell": [
+        15,
+        15
+      ]
+    },
+    {
+      "sample_id": "SE_01",
+      "source_room": "South Studio East",
+      "cell": [
+        17,
+        13
+      ]
+    },
+    {
+      "sample_id": "SE_02",
+      "source_room": "South Studio East",
+      "cell": [
+        16,
+        15
+      ]
+    },
+    {
+      "sample_id": "PW_01",
+      "source_room": "Project Bay West",
+      "cell": [
+        14,
+        15
+      ]
+    },
+    {
+      "sample_id": "PW_02",
+      "source_room": "Project Bay West",
+      "cell": [
+        13,
+        18
+      ]
+    },
+    {
+      "sample_id": "PW_03",
+      "source_room": "Project Bay West",
+      "cell": [
+        11,
+        20
+      ]
+    },
+    {
+      "sample_id": "PE_01",
+      "source_room": "Project Bay East",
+      "cell": [
+        17,
+        15
+      ]
+    },
+    {
+      "sample_id": "PE_02",
+      "source_room": "Project Bay East",
+      "cell": [
+        18,
+        18
+      ]
+    },
+    {
+      "sample_id": "PE_03",
+      "source_room": "Project Bay East",
+      "cell": [
+        20,
+        20
+      ]
+    }
+  ],
+  "scenario_grid": {
+    "base_temperatures_c": [
+      20.0,
+      22.0,
+      23.5,
+      25.0,
+      28.0
+    ],
+    "base_relative_humidity_pct": [
+      35.0,
+      55.0,
+      75.0,
+      80.0
+    ],
+    "scenario_count": 280
+  }
+}

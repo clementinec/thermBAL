@@ -375,6 +375,18 @@ SECTIONS = [
         "heat-balance engine, enabling real-time comparison of comfort outcomes across "
         "plan variants.",
 
+        "A secondary office counterfactual on the same footprint sharpens this point. When "
+        "the apartment envelope is reinterpreted as either a cellular office or an open-plan "
+        "office under a cool-humid 22\u00b0C / 80% RH condition, mean PMV remains nearly unchanged "
+        "for several cohorts while the spatial field stretches substantially. For a realistic "
+        "mixed office cohort, interpolated work-cell PMV range increases from 0.216 in the "
+        "cellular layout to 0.662 in the open layout; for a default 35-year-old male baseline, "
+        "the same range increases from 0.179 to 0.529; for a realistic male cohort, from 0.182 "
+        "to 0.537; and for a lighter-clothed female cohort, from 0.245 to 0.772. The open plan "
+        "does not necessarily improve mean comfort. It makes perimeter-to-core thermal "
+        "inequality more spatially legible, whereas the cellular plan suppresses that "
+        "inequality through room averaging.",
+
         "The occupant model accepts arbitrary agent definitions beyond the six cohorts "
         "presented here, including high-density layouts and sparse occupancy patterns. "
         "Scheduled events allow agents to move between rooms and change clothing or activity "
@@ -404,6 +416,12 @@ SECTIONS = [
         "container for thermal conditions but an active instrument whose spatial decisions "
         "carry thermal consequences on the same order as the occupant variables that "
         "designers do not typically control.",
+
+        "The secondary office counterfactual extends this claim from residential partitioning "
+        "to workplace topology. Reusing the same footprint as either a cellular or open office "
+        "shows that topology shifts the visibility and distribution of discomfort more than the "
+        "mean thermal state: open plans preserve broader perimeter-to-core gradients, while "
+        "cellular layouts flatten those same gradients into room-level averages.",
 
         "By making spatial thermal intelligence visible and quantifiable at the plan level, "
         "without requiring energy simulation or computational fluid dynamics, the framework "
