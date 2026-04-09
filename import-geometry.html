@@ -67,7 +67,7 @@ canvas{display:block;background:#fff;border:1px solid #e9e2d7;border-radius:6px;
       <div class="panel-body">
         <div class="tool-note" id="importHint">Load a PDF, align it to the grid, auto-detect the simplified footprint, then refine partitions and openings before sending the template to the simulator.</div>
         <div class="add-row">
-          <button class="btn" onclick="loadBundledSample()" style="flex:1">Load Sample PDF</button>
+          <button class="btn" onclick="loadBundledSample()" style="flex:1">Load Apartment Sample PDF</button>
           <button class="btn" onclick="triggerPdfUpload()" style="flex:1">Upload PDF</button>
         </div>
         <div class="field compact">
@@ -1240,12 +1240,12 @@ function finishPdfLoad(label) {
 
 async function loadBundledSample() {
   try {
-    const response = await fetch('floor_plan/tav-floor-plan-mar-09.pdf');
+    const response = await fetch('floor_plan/Apt_Floorplan.pdf');
     if(!response.ok) throw new Error('HTTP ' + response.status);
     const buffer = await response.arrayBuffer();
-    pdfSourceName = 'tav-floor-plan-mar-09.pdf';
+    pdfSourceName = 'Apt_Floorplan.pdf';
     await loadPdfFromData({ data: buffer });
-    finishPdfLoad('bundled sample PDF');
+    finishPdfLoad('bundled apartment sample PDF');
   } catch (err) {
     console.error(err);
     setStatus('Bundled sample could not be loaded here. Upload the PDF manually if needed.', true);
