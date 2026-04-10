@@ -29,6 +29,7 @@ IMG = {
     "span":         FIGS / "fig3_comfort_span_hires.png",
     "decomp":       FIGS / "fig4_heat_loss_decomposition_hires.png",
     "scatter":      FIGS / "fig5_conv_rad_scatter_hires.png",
+    "office_story": CASE.parent / "office_topology_compare" / "out" / "figures" / "fig_office_topology_story_hires.png",
 }
 
 # ═══════════════════════════════════════════════════════════════════
@@ -41,23 +42,26 @@ TITLE = (
 )
 
 ABSTRACT = (
-    "A single thermostat setpoint applied to one apartment produces substantial thermal "
-    "comfort variation across rooms and occupant cohorts, with room-level PMV spans ranging "
-    "from roughly one to nearly four units depending on cohort and setpoint. This paper "
-    "presents a spatial comfort assessment framework that computes ISO 7730 heat-balance "
-    "decomposition for individually placed occupant agents across a gridded floor plan, "
-    "translating anticipated design conditions into occupant-level thermal outcomes. "
-    "Applied to a 24-room apartment under 120 scenarios (five air temperatures, four "
-    "humidity levels, six occupant cohorts spanning demographic and behavioral variation), "
-    "the framework produces 2,520 agent-level records and per-agent JSON snapshots carrying "
-    "full convective, radiative, evaporative, and respiratory heat-loss breakdowns. In the "
-    "apartment case, orientation-driven mean radiant temperature offsets shift radiative heat "
-    "loss by about 5 W/m\u00b2, while cohort configurations involving clothing and activity shift "
-    "convective and radiative loss by similar magnitudes. These effects are comparable in "
-    "order: the architectural plan is not a passive container for thermal conditions but an "
-    "active participant in the comfort equation. The framework surfaces this hidden spatial "
-    "intelligence without energy modeling or computational fluid dynamics, operating at the "
-    "resolution and speed accessible to designers during early design."
+    "Floor plans carry thermal consequences that conventional representations cannot show. "
+    "A south-facing bedroom occupied by an older resident can produce a fundamentally different "
+    "thermal experience than a north-facing studio used by a younger desk worker, even under "
+    "the same setpoint. This paper presents a spatial comfort assessment framework that makes "
+    "that hidden differentiation legible by distributing individually characterized occupant "
+    "agents across a gridded floor plan and computing ISO 7730 heat-balance decomposition per "
+    "agent, turning anticipated design conditions into a population-level thermal field rather "
+    "than a zone-level average. Applied to a 24-room apartment under 120 scenarios (five air "
+    "temperatures, four humidity levels, six occupant cohorts spanning demographic and "
+    "behavioral variation), the framework produces 2,520 agent-level records and per-agent "
+    "JSON snapshots carrying full convective, radiative, evaporative, and respiratory heat-loss "
+    "breakdowns. In the apartment case, room-level PMV spans range from roughly one to nearly "
+    "four units within a single plan under uniform setpoints. A secondary office counterfactual "
+    "on the same footprint shows that partition topology redistributes discomfort more than it "
+    "resolves it: open plans preserve perimeter-to-core thermal inequality that cellular layouts "
+    "suppress through room averaging. Orientation-driven mean radiant temperature offsets shift "
+    "radiative heat loss by about 5 W/m\u00b2, while cohort configurations involving clothing and "
+    "activity shift convective and radiative loss by similar magnitudes. Spatial organization "
+    "is not a passive container for thermal conditions. It is an active participant in who gets "
+    "comfortable and who does not."
 )
 
 KEYWORDS = "thermal comfort, spatial intelligence, heat-balance decomposition, PMV, floor plan assessment"
@@ -71,47 +75,50 @@ SECTIONS = [
 
     (1, "1", "Introduction", [
 
-        "Room orientation, plan depth, and adjacency to exterior walls carry thermal "
-        "consequences that propagate to occupant experience. Standard practice evaluates "
-        "these consequences at the building level through energy models reporting zone-average "
-        "temperatures and aggregate loads. The embedded assumption is that comfort within a "
-        "conditioned zone is uniform: set the thermostat, and the zone is comfortable.",
+        "Architectural design is always directed toward occupants, yet early environmental "
+        "reasoning often treats those occupants as generic. Standard workflows reduce a "
+        "building to conditioned zones and report average temperatures and aggregate loads. "
+        "The embedded assumption is that if the thermostat is set appropriately, the zone is "
+        "comfortable and the people inside it are effectively interchangeable.",
 
-        "This assumption conceals substantial heterogeneity. Under a single 25\u00b0C setpoint, "
-        "mean radiant temperature varies by orientation, air velocity varies by room function, "
-        "and occupants themselves modulate the thermal balance through their age, body mass, "
-        "clothing, and activity. A south-facing bedroom occupied by an elderly person in light "
-        "clothing produces a fundamentally different thermal experience than a north-facing "
-        "kitchen with a younger person standing and cooking. The plan encodes this "
-        "differentiation. Conventional tools do not reveal it.",
+        "That assumption does not survive contact with an actual floor plan. Under the same "
+        "25\u00b0C setpoint, mean radiant temperature varies by orientation, air velocity varies "
+        "by room function, and occupants themselves modulate the thermal balance through their "
+        "age, body mass, clothing, and activity. A south-facing bedroom occupied by an older "
+        "resident in light clothing produces a fundamentally different thermal experience than "
+        "a north-facing kitchen with a younger person standing and cooking. The plan encodes "
+        "this differentiation. Conventional tools and drawings do not surface it.",
 
-        "This paper presents a framework that translates anticipated design conditions "
-        "into individual-level heat-balance outcomes across a floor plan. The framework "
-        "computes ISO 7730 Predicted Mean Vote for each placed occupant agent and decomposes "
-        "the result into convective, radiative, evaporative, and respiratory heat-loss "
-        "pathways. Distributing agents across a settled design and sweeping environmental "
-        "parameters reveals hidden spatial intelligence: thermal comfort patterns latent in "
-        "the spatial organization but invisible in drawings or zone-level outputs.",
+        "The gap this creates is not merely technical. It is representational. Architects make "
+        "decisions about room assignment, partition placement, glazing, and orientation during "
+        "early design, long before any occupant sets foot in the building. Those decisions carry "
+        "thermal consequences for specific kinds of people, yet the standard zone-level model "
+        "collapses those consequences into a single average. The plan communicates spatial "
+        "intent. It does not communicate who will be comfortable and who will not.",
 
-        "The underlying data model captures a holistic snapshot of each occupant\u2019s "
-        "experience: thermal state, lighting, acoustics, spatial context, demographics, "
-        "and preferences. This paper exercises the thermal channel quantitatively, "
-        "demonstrating that the agent-level structure supports rigorous heat-balance "
-        "analysis at the plan scale.",
+        "This paper presents a framework that closes that representational gap. By distributing "
+        "individually characterized occupant agents across a gridded floor plan and computing "
+        "ISO 7730 heat-balance decomposition per agent, the framework translates anticipated "
+        "design conditions into a population-level thermal field readable at the resolution "
+        "where design decisions happen. The result is not an optimization dashboard. It is a "
+        "design-facing analytical drawing that makes the thermal consequences of spatial "
+        "decisions visible before construction.",
 
-        "The contribution is threefold: (1) a lightweight, deterministic framework linking "
-        "spatial design to occupant-level thermal decomposition; (2) a 120-scenario apartment "
-        "case study demonstrating that spatial geometry and body configuration produce "
-        "comparable magnitudes (~5 W/m\u00b2) of heat-transfer heterogeneity; and (3) evidence "
-        "that floor plans contain recoverable thermal intelligence that zone-level analysis "
-        "does not surface.",
+        "The framework combines three input layers\u2014spatial geometry, room-level "
+        "environmental conditions, and individually characterized occupant agents\u2014and "
+        "produces per-agent JSON snapshots carrying full heat-loss decomposition alongside "
+        "demographic, spatial, and preference context. Applied to a 24-room apartment under "
+        "120 scenarios and extended to an office topology counterfactual on the same footprint, "
+        "the case study demonstrates that spatial organization and body configuration produce "
+        "comparable magnitudes of thermal heterogeneity, and that partition topology reshapes "
+        "the visibility of discomfort more than it resolves the discomfort itself.",
 
-        "To be clear about what this framework does and does not do: it does not optimize "
-        "a plan. It reveals where a given design becomes population-conditioned and spatially "
-        "fragile, where comfort outcomes diverge sharply across occupant profiles and room "
-        "positions. This changes early design judgment about room assignment, orientation, "
-        "partition placement, glazing specification, and environmental setpoints, because the "
-        "consequences of those decisions become visible before construction.",
+        "The contribution is not a new dynamic simulation method. It is a lightweight, "
+        "deterministic representational instrument for early design: one that reveals where a "
+        "given plan becomes population-conditioned and spatially fragile, where comfort outcomes "
+        "diverge sharply across occupant profiles and room positions, and where room assignment, "
+        "orientation, partition placement, glazing specification, and environmental setpoints "
+        "carry consequences that conventional zone-level analysis does not show.",
     ]),
 
     (1, "2", "Related Work", [
@@ -319,9 +326,12 @@ SECTIONS = [
     (1, "5", "Discussion", []),
 
     (2, "5.1", "Comparable Magnitudes of Spatial and Body Effects", [
-        "Figure 7 plots convective against radiative heat loss for each room in three cohorts "
-        "at 25\u00b0C. Color encodes cohort; marker shape encodes solar exposure. A diagonal "
-        "reference marks equal convective and radiative loss.",
+        "The heat-balance decomposition makes it possible to ask a design question that "
+        "conventional comfort analysis usually hides: does the spatial organization of a plan "
+        "matter as much as the people inside it? Figure 7 plots convective against radiative "
+        "heat loss for each room in three cohorts at 25\u00b0C. Color encodes cohort; marker "
+        "shape encodes solar exposure. A diagonal reference marks equal convective and "
+        "radiative loss.",
 
         "Three findings emerge. First, cohort clusters separate clearly along both axes. "
         "At 25\u00b0C / 55% RH, the higher-clothing sedentary cohort shifts mean convective and "
@@ -367,25 +377,24 @@ SECTIONS = [
     ]),
 
     (2, "5.3", "Design Interventions and Future Work", [
-        "Within these limitations, the framework supports design interventions beyond those "
-        "exercised in this case study. Modifying wall partitions changes room geometry and "
-        "zone assignment. Increasing glazing area or changing facade type alters the mean "
-        "radiant temperature assigned to affected rooms. Adjusting mechanical ventilation "
-        "changes per-room air velocity. Each intervention propagates instantly through the "
-        "heat-balance engine, enabling real-time comparison of comfort outcomes across "
-        "plan variants.",
+        "Within these limitations, the framework supports the kind of iterative judgment that "
+        "characterizes early design. Modifying wall partitions changes room geometry and zone "
+        "assignment. Increasing glazing area or changing facade type alters the mean radiant "
+        "temperature assigned to affected rooms. Adjusting mechanical ventilation changes "
+        "per-room air velocity. Each intervention propagates instantly through the heat-balance "
+        "engine, enabling direct comparison of comfort outcomes across plan variants.",
 
-        "A secondary office counterfactual on the same footprint sharpens this point. When "
-        "the apartment envelope is reinterpreted as either a cellular office or an open-plan "
-        "office under a cool-humid 22\u00b0C / 80% RH condition, mean PMV remains nearly unchanged "
-        "for several cohorts while the spatial field stretches substantially. For a realistic "
-        "mixed office cohort, interpolated work-cell PMV range increases from 0.216 in the "
-        "cellular layout to 0.662 in the open layout; for a default 35-year-old male baseline, "
-        "the same range increases from 0.179 to 0.529; for a realistic male cohort, from 0.182 "
-        "to 0.537; and for a lighter-clothed female cohort, from 0.245 to 0.772. The open plan "
-        "does not necessarily improve mean comfort. It makes perimeter-to-core thermal "
-        "inequality more spatially legible, whereas the cellular plan suppresses that "
-        "inequality through room averaging.",
+        "The office counterfactual suggests that topology can redistribute the visibility of "
+        "discomfort even when it does not materially improve mean comfort (Figure 8). When the "
+        "same envelope is reinterpreted as either a cellular office or an open-plan office "
+        "under a cool-humid 22\u00b0C / 80% RH condition, the cohort means remain nearly unchanged "
+        "while the spatial field stretches substantially. For a realistic mixed office cohort, "
+        "interpolated work-cell PMV range increases from 0.216 in the cellular layout to 0.662 "
+        "in the open layout; for a default 35-year-old male baseline, from 0.179 to 0.529; for "
+        "a realistic male cohort, from 0.182 to 0.537; and for a lighter-clothed female cohort, "
+        "from 0.245 to 0.772. The open plan does not necessarily solve the comfort problem. It "
+        "makes perimeter-to-core thermal inequality more spatially legible, whereas the cellular "
+        "plan suppresses that same inequality through room averaging.",
 
         "The occupant model accepts arbitrary agent definitions beyond the six cohorts "
         "presented here, including high-density layouts and sparse occupancy patterns. "
@@ -398,39 +407,35 @@ SECTIONS = [
     ]),
 
     (1, "6", "Conclusion", [
-        "This paper presented a spatial thermal comfort assessment framework that computes "
-        "occupant-level heat-balance decomposition from anticipated design conditions across "
-        "a floor plan. Applied to a 24-room apartment under 120 scenarios, the framework "
-        "reveals persistent comfort heterogeneity ranging from roughly one to nearly four PMV "
-        "units within a single plan under uniform setpoints\u2014a hidden spatial intelligence "
-        "that is encoded in the "
-        "plan\u2019s geometry and environmental differentiation but invisible in conventional "
-        "representations.",
+        "Much thermal analysis still implies a generic occupant and a generic zone. This paper "
+        "argues that those abstractions hide the consequences of spatial decisions for different "
+        "bodies in different rooms. By distributing individually characterized agents across a "
+        "floor plan, the framework makes hidden thermal intelligence legible before "
+        "construction.",
 
-        "The heat-balance decomposition provides the mechanism behind the heterogeneity. "
-        "Spatial factors\u2014primarily orientation-driven mean radiant temperature gradients\u2014"
-        "and body-configuration factors\u2014in this case most visibly clothing and activity "
-        "configuration\u2014shift heat loss by comparable magnitudes on the order of five watts "
-        "per square meter. "
-        "These comparable magnitudes suggest that the architectural plan is not a passive "
-        "container for thermal conditions but an active instrument whose spatial decisions "
-        "carry thermal consequences on the same order as the occupant variables that "
-        "designers do not typically control.",
+        "In the 24-room apartment case, that hidden intelligence appears as persistent comfort "
+        "heterogeneity ranging from roughly one to nearly four PMV units within a single plan "
+        "under uniform setpoints. The heat-balance decomposition shows why. Spatial factors\u2014"
+        "primarily orientation-driven mean radiant temperature gradients\u2014and body-"
+        "configuration factors\u2014most visibly clothing and activity configuration in this "
+        "study\u2014shift heat loss by comparable magnitudes on the order of five watts per "
+        "square meter. The architectural plan is therefore not a passive container for thermal "
+        "conditions. Its spatial decisions carry thermal consequences on the same order as "
+        "occupant variables designers do not typically control.",
 
-        "The secondary office counterfactual extends this claim from residential partitioning "
-        "to workplace topology. Reusing the same footprint as either a cellular or open office "
-        "shows that topology shifts the visibility and distribution of discomfort more than the "
-        "mean thermal state: open plans preserve broader perimeter-to-core gradients, while "
-        "cellular layouts flatten those same gradients into room-level averages.",
+        "The office counterfactual sharpens this claim. Reusing the same footprint as a cellular "
+        "or open office does not produce dramatically different mean comfort; at 22\u00b0C, many "
+        "occupants remain cold in both layouts. What changes is the distribution and visibility "
+        "of discomfort. Open topology stretches the perimeter-to-core gradient into a legible "
+        "spatial field, while cellular topology collapses that same gradient back into room "
+        "averages.",
 
-        "By making spatial thermal intelligence visible and quantifiable at the plan level, "
-        "without requiring energy simulation or computational fluid dynamics, the framework "
-        "supports informed design decisions about room layout, orientation, partition "
-        "placement, glazing, and environmental specification before physical construction. "
-        "The holistic data model, which already carries lighting, acoustic, and preference "
-        "fields alongside the thermal channel exercised here, positions this work for "
-        "extension to multi-channel environmental quality assessment at the same spatial "
-        "resolution.",
+        "What the framework ultimately offers is not another optimization target but a new kind "
+        "of design feedback: the ability to see, before a building is built, which occupants a "
+        "given spatial configuration advantages, which it penalizes, and why. The holistic data "
+        "model already carries lighting, acoustic, and preference fields alongside the thermal "
+        "channel exercised here, positioning the framework for extension to multi-channel "
+        "environmental quality assessment at the same spatial resolution.",
     ]),
 ]
 
@@ -459,6 +464,7 @@ FIGURE_CAPTIONS = {
     5: "Figure 5.  Comfort span across design conditions. Each dot is one occupant; horizontal bars show cohort mean. Marker shape encodes solar exposure. Depending on cohort and setpoint, the within-plan PMV spread ranges from roughly 1 to nearly 4 units and narrows toward the comfort zone without disappearing.",
     6: "Figure 6.  Heat-loss decomposition for the young mixed cohort at 25\u00b0C / 55% RH. Stacked bars show convective, radiative, evaporative, and respiratory components per room, sorted by total heat loss. Exposure chips on left; room conditions on right.",
     7: "Figure 7.  Convective versus radiative heat loss per occupant for three cohorts at 25\u00b0C. Marker shape encodes exposure. Spatial factors (orientation) and cohort configuration effects (especially clothing and activity) shift heat loss by comparable magnitudes on the order of 5 W/m\u00b2.",
+    8: "Figure 8.  Office topology counterfactual on the shared footprint at 22\u00b0C / 80% RH. Columns compare three cohorts; rows compare the same plan interpreted as a cellular office and as an open office. Cell color encodes mean cohort PMV at work cells. Default-male workers remain least cold, while mixed and female-light cohorts shift colder; opening the plan leaves cohort means nearly unchanged but stretches the spatial field and makes the perimeter-to-core gradient visibly continuous.",
 }
 
 ACKNOWLEDGEMENTS = (
@@ -644,6 +650,10 @@ def build():
     heading_b("5.3 Design Interventions and Future Work")
     for text in _section_paras("5.3"):
         body(text)
+
+    figure("office_story",
+           FIGURE_CAPTIONS[8],
+           width=Inches(6.5))
 
     # ═════════════════════════════════════════════════════════════
     # 6. Conclusion
