@@ -21,7 +21,8 @@ FIGS = CASE / "out" / "figures"
 # ── Image paths ────────────────────────────────────────────────────
 
 IMG = {
-    "pipeline":     FIGS / "fig0_framework_pipeline_hires.png",
+    "hero":         FIGS / "hero_occu.png",
+    "pipeline":     FIGS / "draft_workflow.jpeg",
     "occupant_map": CASE / "Physics_Occupant.png",
     "json_snippet": FIGS / "fig_json_snippet_hires.png",
     "plan":         FIGS / "fig1_apartment_plan_hires.png",
@@ -81,7 +82,9 @@ SECTIONS = [
         "reasoning often treats those occupants as generic. Standard workflows reduce a "
         "building to conditioned zones and report average temperatures and aggregate loads. "
         "The embedded assumption is that if the thermostat is set appropriately, the zone is "
-        "comfortable and the people inside it are effectively interchangeable.",
+        "comfortable and the people inside it are effectively interchangeable. Figure 1 "
+        "distills the premise: the same nominal room can produce meaningfully different "
+        "discomfort outcomes once occupant physiology is made explicit.",
 
         "That assumption does not survive contact with an actual floor plan. Under the same "
         "25\u00b0C setpoint, mean radiant temperature varies by orientation, air velocity varies "
@@ -173,14 +176,16 @@ SECTIONS = [
     (1, "3", "Methods", []),
 
     (2, "3.1", "Framework Overview", [
-        "The framework operates on three input layers (Figure 1). The first is spatial "
-        "geometry: a grid-based floor plan with rooms defined as contiguous sets of cells, "
-        "bounded by walls and connected by doors and openings. The second is environmental "
-        "conditions: each room carries a static set of anticipated design parameters "
-        "(air temperature, mean radiant temperature, relative humidity, air velocity, "
-        "illuminance, and background noise level) assigned from design specifications rather "
-        "than simulated. The third is occupant agents: individually placed persons "
-        "characterized by demographics, clothing insulation, activity level, and preferences.",
+        "Figure 2 summarizes the study logic rather than a software stack. The framework "
+        "begins from the default-occupant assumption common to early design reasoning, then "
+        "replaces it with heterogeneous populations, alternative spatial organizations, and "
+        "explicit thermal condition sets. In implementation, those inputs still resolve into "
+        "three analytical layers: spatial geometry, anticipated environmental conditions, and "
+        "occupant agents. Geometry is a grid-based floor plan with rooms defined as contiguous "
+        "sets of cells, bounded by walls and connected by doors and openings. Environmental "
+        "conditions are assigned per room from design specifications rather than simulated. "
+        "Occupant agents are individually placed persons characterized by demographics, "
+        "clothing insulation, activity level, and preferences.",
 
         "The framework is structured to accept any floor plan that can be segmented into "
         "rooms with assigned environmental conditions. Geometry enters through an assisted "
@@ -200,7 +205,7 @@ SECTIONS = [
         "is a calculation, not a simulation. The distinction is deliberate: the framework runs "
         "instantly and produces fully traceable results, enabling rapid iteration during design.",
 
-        "The per-agent output is a structured JSON snapshot (Figure 2) carrying the full "
+        "The per-agent output is a structured JSON snapshot (Figure 3) carrying the full "
         "context of one occupant\u2019s experience: environment, spatial position, computed "
         "thermal state with heat-loss decomposition, demographics, and preferences. The "
         "record is computationally grounded in empirical heat-transfer relationships while "
@@ -232,7 +237,7 @@ SECTIONS = [
         "To demonstrate the framework on a realistic plan, the case study uses a 24-room "
         "apartment traced from architectural drawings through the PDF import pipeline. The "
         "plan is discretized onto a 32\u00d724 meter grid at one-meter cell resolution "
-        "(Figure 3). Twenty-one rooms are occupied; three circulation zones are excluded. "
+        "(Figure 4). Twenty-one rooms are occupied; three circulation zones are excluded. "
         "The apartment was selected as a reasonably generic residential typology; the "
         "framework is equally applicable to any plan that can be segmented into rooms with "
         "assigned conditions.",
@@ -266,7 +271,7 @@ SECTIONS = [
     (1, "4", "Results", []),
 
     (2, "4.1", "Spatial Comfort Heterogeneity Under Varying Design Conditions", [
-        "Figure 4 presents the central result as a three-by-three matrix of apartment plans "
+        "Figure 5 presents the central result as a three-by-three matrix of apartment plans "
         "colored by occupant PMV. Columns correspond to three occupant cohorts (higher clothing, "
         "young mixed, and age-shifted), and rows correspond to three air temperature setpoints "
         "(20, 25, and 28\u00b0C), all at 55% relative humidity. Reading horizontally across "
@@ -287,7 +292,7 @@ SECTIONS = [
     ]),
 
     (2, "4.2", "Quantified Comfort Span", [
-        "Figure 5 presents the comfort span as a strip chart plotting each occupant\u2019s PMV "
+        "Figure 6 presents the comfort span as a strip chart plotting each occupant\u2019s PMV "
         "across five air temperatures for three cohorts. Each dot represents one agent in one "
         "room; marker shape encodes solar exposure. Several patterns are immediately apparent.",
 
@@ -307,7 +312,7 @@ SECTIONS = [
     ]),
 
     (2, "4.3", "Heat-Balance Decomposition", [
-        "Figure 6 presents the heat-loss decomposition for the young mixed cohort at 25\u00b0C "
+        "Figure 7 presents the heat-loss decomposition for the young mixed cohort at 25\u00b0C "
         "and 55% relative humidity. Each horizontal bar represents one occupied room, sorted "
         "by total heat loss and divided into convective, radiative, evaporative, and respiratory "
         "components. Exposure zone is indicated by color chips on the left margin; mean radiant "
@@ -330,7 +335,7 @@ SECTIONS = [
     (2, "5.1", "Comparable Magnitudes of Spatial and Body Effects", [
         "The heat-balance decomposition makes it possible to ask a design question that "
         "conventional comfort analysis usually hides: does the spatial organization of a plan "
-        "matter as much as the people inside it? Figure 7 plots convective against radiative "
+        "matter as much as the people inside it? Figure 8 plots convective against radiative "
         "heat loss for each room in three cohorts at 25\u00b0C. Color encodes cohort; marker "
         "shape encodes solar exposure. A diagonal reference marks equal convective and "
         "radiative loss.",
@@ -387,7 +392,7 @@ SECTIONS = [
         "engine, enabling direct comparison of comfort outcomes across plan variants.",
 
         "The office counterfactual suggests that topology can redistribute and sometimes deepen "
-        "cold-side discomfort even when it does not materially improve mean comfort (Figure 8). "
+        "cold-side discomfort even when it does not materially improve mean comfort (Figure 9). "
         "When the same envelope is reinterpreted as either a cellular office or an open-plan "
         "office under a cool-humid 22\u00b0C / 80% RH condition, the cohort means shift only "
         "marginally, with three of the four compared cohorts moving slightly colder, while the "
@@ -462,14 +467,15 @@ REFERENCES = [
 ]
 
 FIGURE_CAPTIONS = {
-    1: "Figure 1.  Workflow from plan authoring to batch outputs. PDF- or Rhino-derived geometry is simplified into a grid-based template, enriched with room conditions and occupant cohorts, then evaluated by thermBAL\u2019s deterministic heat-balance engine to produce PMV maps, comparative plots, and per-agent JSON snapshots.",
-    2: "Figure 2.  Occupant perception map showing the structured snapshot for one agent. The record carries environment, spatial context, computed thermal state with heat-loss decomposition, agent demographics, and subjective preferences.",
-    3: "Figure 3.  Apartment plan with 24 rooms classified by solar exposure. South-facing rooms receive a mean radiant temperature offset of +1.5 K; east/west rooms receive +0.75 K; north and interior rooms receive no offset.",
-    4: "Figure 4.  Same spatial design under varying conditions and bodies. Columns: three occupant cohorts. Rows: three air temperature setpoints (20, 25, 28\u00b0C). Room color encodes occupant PMV clamped to [\u22123, +1.5]. All scenarios at 55% RH.",
-    5: "Figure 5.  Comfort span across design conditions. Each dot is one occupant; horizontal bars show cohort mean. Marker shape encodes solar exposure. Depending on cohort and setpoint, the within-plan PMV spread ranges from roughly 1 to nearly 4 units and narrows toward the comfort zone without disappearing.",
-    6: "Figure 6.  Heat-loss decomposition for the young mixed cohort at 25\u00b0C / 55% RH. Stacked bars show convective, radiative, evaporative, and respiratory components per room, sorted by total heat loss. Exposure chips on left; room conditions on right.",
-    7: "Figure 7.  Convective versus radiative heat loss per occupant for three cohorts at 25\u00b0C. Marker shape encodes exposure. Spatial factors (orientation) and cohort configuration effects (especially clothing and activity) shift heat loss by comparable magnitudes on the order of 5 W/m\u00b2.",
-    8: "Figure 8.  Office topology counterfactual on the shared footprint at 22\u00b0C / 80% RH. Left: the same footprint rendered as a cellular office and as an open office for three representative cohorts; color encodes interpolated PMV across occupied work areas, while support rooms remain muted. Right: paired boxplots show actual work-cell PMV distributions for four cohorts on a shared axis (graphite = cellular, moss = open). The open-plan version widens PMV spread for every cohort and typically nudges sensation colder, making perimeter-to-core thermal inequality more legible rather than eliminating it.",
+    1: "Figure 1.  Conceptual premise of the paper. The same nominal room can yield different discomfort outcomes once occupant physiology is made explicit, even before plan-scale spatial variation is introduced.",
+    2: "Figure 2.  Logic workflow for the study. A default-male baseline is replaced by diverse occupant populations, applied to shared footprints under alternative spatial organizations and thermal conditions, then evaluated through thermBAL\u2019s deterministic ISO 7730 engine to compare comfort outcomes and reveal systemic thermal unfairness.",
+    3: "Figure 3.  Occupant perception map showing the structured snapshot for one agent. The record carries environment, spatial context, computed thermal state with heat-loss decomposition, agent demographics, and subjective preferences.",
+    4: "Figure 4.  Apartment plan with 24 rooms classified by solar exposure. South-facing rooms receive a mean radiant temperature offset of +1.5 K; east/west rooms receive +0.75 K; north and interior rooms receive no offset.",
+    5: "Figure 5.  Same spatial design under varying conditions and bodies. Columns: three occupant cohorts. Rows: three air temperature setpoints (20, 25, 28\u00b0C). Room color encodes occupant PMV clamped to [\u22123, +1.5]. All scenarios at 55% RH.",
+    6: "Figure 6.  Comfort span across design conditions. Each dot is one occupant; horizontal bars show cohort mean. Marker shape encodes solar exposure. Depending on cohort and setpoint, the within-plan PMV spread ranges from roughly 1 to nearly 4 units and narrows toward the comfort zone without disappearing.",
+    7: "Figure 7.  Heat-loss decomposition for the young mixed cohort at 25\u00b0C / 55% RH. Stacked bars show convective, radiative, evaporative, and respiratory components per room, sorted by total heat loss. Exposure chips on left; room conditions on right.",
+    8: "Figure 8.  Convective versus radiative heat loss per occupant for three cohorts at 25\u00b0C. Marker shape encodes exposure. Spatial factors (orientation) and cohort configuration effects (especially clothing and activity) shift heat loss by comparable magnitudes on the order of 5 W/m\u00b2.",
+    9: "Figure 9.  Office topology counterfactual on the shared footprint at 22\u00b0C / 80% RH. Left: the same footprint rendered as a cellular office and as an open office for three representative cohorts; color encodes interpolated PMV across occupied work areas, while support rooms remain muted. Right: paired boxplots show actual work-cell PMV distributions for four cohorts on a shared axis (graphite = cellular, moss = open). The open-plan version widens PMV spread for every cohort and typically nudges sensation colder, making perimeter-to-core thermal inequality more legible rather than eliminating it.",
 }
 
 ACKNOWLEDGEMENTS = (
@@ -560,7 +566,15 @@ def build():
     # 1. Introduction
     # ═════════════════════════════════════════════════════════════
     heading_a("1 Introduction")
-    for text in _section_paras("1"):
+    intro_paras = _section_paras("1")
+    body(intro_paras[0])
+
+    # → Figure 1: Conceptual premise
+    figure("hero",
+           FIGURE_CAPTIONS[1],
+           width=Inches(6.5))
+
+    for text in intro_paras[1:]:
         body(text)
 
     # ═════════════════════════════════════════════════════════════
@@ -579,14 +593,14 @@ def build():
     for text in _section_paras("3.1"):
         body(text)
 
-    # → Figure 1: Framework pipeline
+    # → Figure 2: Workflow board
     figure("pipeline",
-           FIGURE_CAPTIONS[1],
+           FIGURE_CAPTIONS[2],
            width=Inches(6.5))
 
-    # → Figure 2: Occupant perception map (data model)
+    # → Figure 3: Occupant perception map (data model)
     figure("occupant_map",
-           FIGURE_CAPTIONS[2],
+           FIGURE_CAPTIONS[3],
            width=Inches(5.0))
 
     heading_b("3.2 Thermal Computation")
@@ -597,9 +611,9 @@ def build():
     for text in _section_paras("3.3"):
         body(text)
 
-    # → Figure 3: Apartment plan
+    # → Figure 4: Apartment plan
     figure("plan",
-           FIGURE_CAPTIONS[3],
+           FIGURE_CAPTIONS[4],
            width=Inches(6.5))
 
     # ═════════════════════════════════════════════════════════════
@@ -611,27 +625,27 @@ def build():
     for text in _section_paras("4.1"):
         body(text)
 
-    # → Figure 4: Design matrix (3×3)
+    # → Figure 5: Design matrix (3×3)
     figure("matrix",
-           FIGURE_CAPTIONS[4],
+           FIGURE_CAPTIONS[5],
            width=Inches(6.5))
 
     heading_b("4.2 Quantified Comfort Span")
     for text in _section_paras("4.2"):
         body(text)
 
-    # → Figure 5: Comfort span strip chart
+    # → Figure 6: Comfort span strip chart
     figure("span",
-           FIGURE_CAPTIONS[5],
+           FIGURE_CAPTIONS[6],
            width=Inches(6.5))
 
     heading_b("4.3 Heat-Balance Decomposition")
     for text in _section_paras("4.3"):
         body(text)
 
-    # → Figure 6: Heat loss stacked bars
+    # → Figure 7: Heat loss stacked bars
     figure("decomp",
-           FIGURE_CAPTIONS[6],
+           FIGURE_CAPTIONS[7],
            width=Inches(6.0))
 
     # ═════════════════════════════════════════════════════════════
@@ -643,9 +657,9 @@ def build():
     for text in _section_paras("5.1"):
         body(text)
 
-    # → Figure 7: Conv-rad scatter
+    # → Figure 8: Conv-rad scatter
     figure("scatter",
-           FIGURE_CAPTIONS[7],
+           FIGURE_CAPTIONS[8],
            width=Inches(5.0))
 
     heading_b("5.2 Limitations")
@@ -657,7 +671,7 @@ def build():
         body(text)
 
     figure("office_story",
-           FIGURE_CAPTIONS[8],
+           FIGURE_CAPTIONS[9],
            width=Inches(6.5))
 
     # ═════════════════════════════════════════════════════════════
