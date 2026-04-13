@@ -29,7 +29,7 @@ IMG = {
     "span":         FIGS / "fig3_comfort_span_hires.png",
     "decomp":       FIGS / "fig4_heat_loss_decomposition_hires.png",
     "scatter":      FIGS / "fig5_conv_rad_scatter_hires.png",
-    "office_story": CASE.parent / "office_topology_compare" / "out" / "figures" / "fig_office_topology_story_hires.png",
+    "office_story": CASE.parent / "office_topology_compare" / "out" / "figures" / "fig_office_topology_story_with_box_sidecar_hires.png",
 }
 
 # ═══════════════════════════════════════════════════════════════════
@@ -55,9 +55,11 @@ ABSTRACT = (
     "JSON snapshots carrying full convective, radiative, evaporative, and respiratory heat-loss "
     "breakdowns. In the apartment case, room-level PMV spans range from roughly one to nearly "
     "four units within a single plan under uniform setpoints. A secondary office counterfactual "
-    "on the same footprint shows that partition topology redistributes discomfort more than it "
-    "resolves it: open plans preserve perimeter-to-core thermal inequality that cellular layouts "
-    "suppress through room averaging. Orientation-driven mean radiant temperature offsets shift "
+    "on the same footprint shows that partition topology does not neutralize discomfort so much "
+    "as redistribute it: at 22\u00b0C / 80% RH, the open-office interpretation widens work-cell "
+    "PMV spread for every cohort while leaving mean sensation nearly unchanged and, for most "
+    "cohorts, slightly colder than the cellular layout. Orientation-driven mean radiant "
+    "temperature offsets shift "
     "radiative heat loss by about 5 W/m\u00b2, while cohort configurations involving clothing and "
     "activity shift convective and radiative loss by similar magnitudes. Spatial organization "
     "is not a passive container for thermal conditions. It is an active participant in who gets "
@@ -110,8 +112,8 @@ SECTIONS = [
         "demographic, spatial, and preference context. Applied to a 24-room apartment under "
         "120 scenarios and extended to an office topology counterfactual on the same footprint, "
         "the case study demonstrates that spatial organization and body configuration produce "
-        "comparable magnitudes of thermal heterogeneity, and that partition topology reshapes "
-        "the visibility of discomfort more than it resolves the discomfort itself.",
+        "comparable magnitudes of thermal heterogeneity, and that partition topology widens and "
+        "clarifies perimeter-to-core inequality more than it resolves the discomfort itself.",
 
         "The contribution is not a new dynamic simulation method. It is a lightweight, "
         "deterministic representational instrument for early design: one that reveals where a "
@@ -384,17 +386,19 @@ SECTIONS = [
         "per-room air velocity. Each intervention propagates instantly through the heat-balance "
         "engine, enabling direct comparison of comfort outcomes across plan variants.",
 
-        "The office counterfactual suggests that topology can redistribute the visibility of "
-        "discomfort even when it does not materially improve mean comfort (Figure 8). When the "
-        "same envelope is reinterpreted as either a cellular office or an open-plan office "
-        "under a cool-humid 22\u00b0C / 80% RH condition, the cohort means remain nearly unchanged "
-        "while the spatial field stretches substantially. For a realistic mixed office cohort, "
+        "The office counterfactual suggests that topology can redistribute and sometimes deepen "
+        "cold-side discomfort even when it does not materially improve mean comfort (Figure 8). "
+        "When the same envelope is reinterpreted as either a cellular office or an open-plan "
+        "office under a cool-humid 22\u00b0C / 80% RH condition, the cohort means shift only "
+        "marginally, with three of the four compared cohorts moving slightly colder, while the "
+        "work-cell field stretches substantially. For a realistic mixed office cohort, "
         "interpolated work-cell PMV range increases from 0.216 in the cellular layout to 0.662 "
         "in the open layout; for a default 35-year-old male baseline, from 0.179 to 0.529; for "
         "a realistic male cohort, from 0.182 to 0.537; and for a lighter-clothed female cohort, "
-        "from 0.245 to 0.772. The open plan does not necessarily solve the comfort problem. It "
-        "makes perimeter-to-core thermal inequality more spatially legible, whereas the cellular "
-        "plan suppresses that same inequality through room averaging.",
+        "from 0.245 to 0.772. The design intelligence here is not that open plans solve the "
+        "comfort problem. It is that topology determines whether perimeter-to-core inequality is "
+        "averaged away into rooms or exposed as a continuous field that can be read, assigned, "
+        "and redesigned.",
 
         "The occupant model accepts arbitrary agent definitions beyond the six cohorts "
         "presented here, including high-density layouts and sparse occupancy patterns. "
@@ -424,11 +428,12 @@ SECTIONS = [
         "occupant variables designers do not typically control.",
 
         "The office counterfactual sharpens this claim. Reusing the same footprint as a cellular "
-        "or open office does not produce dramatically different mean comfort; at 22\u00b0C, many "
-        "occupants remain cold in both layouts. What changes is the distribution and visibility "
-        "of discomfort. Open topology stretches the perimeter-to-core gradient into a legible "
-        "spatial field, while cellular topology collapses that same gradient back into room "
-        "averages.",
+        "or open office does not improve comfort simply by removing partitions; at 22\u00b0C, many "
+        "occupants remain cold in both layouts. Open plan slightly worsens mean sensation for "
+        "most cohorts and widens work-cell spread for all of them. What changes most is the "
+        "distribution and legibility of discomfort. Open topology stretches the perimeter-to-core "
+        "gradient into a continuous field, while cellular topology collapses that same gradient "
+        "back into room averages.",
 
         "What the framework ultimately offers is not another optimization target but a new kind "
         "of design feedback: the ability to see, before a building is built, which occupants a "
@@ -464,7 +469,7 @@ FIGURE_CAPTIONS = {
     5: "Figure 5.  Comfort span across design conditions. Each dot is one occupant; horizontal bars show cohort mean. Marker shape encodes solar exposure. Depending on cohort and setpoint, the within-plan PMV spread ranges from roughly 1 to nearly 4 units and narrows toward the comfort zone without disappearing.",
     6: "Figure 6.  Heat-loss decomposition for the young mixed cohort at 25\u00b0C / 55% RH. Stacked bars show convective, radiative, evaporative, and respiratory components per room, sorted by total heat loss. Exposure chips on left; room conditions on right.",
     7: "Figure 7.  Convective versus radiative heat loss per occupant for three cohorts at 25\u00b0C. Marker shape encodes exposure. Spatial factors (orientation) and cohort configuration effects (especially clothing and activity) shift heat loss by comparable magnitudes on the order of 5 W/m\u00b2.",
-    8: "Figure 8.  Office topology counterfactual on the shared footprint at 22\u00b0C / 80% RH. Columns compare three cohorts; rows compare the same plan interpreted as a cellular office and as an open office. Color encodes interpolated PMV across occupied work areas, while support rooms remain muted; panel chips report mean PMV, mean PPD, and interpolated field span. Default-male workers remain least cold, while mixed and female-light cohorts shift colder; opening the plan leaves cohort means nearly unchanged but stretches the spatial field and makes the perimeter-to-core gradient visibly continuous.",
+    8: "Figure 8.  Office topology counterfactual on the shared footprint at 22\u00b0C / 80% RH. Left: the same footprint rendered as a cellular office and as an open office for three representative cohorts; color encodes interpolated PMV across occupied work areas, while support rooms remain muted. Right: paired boxplots show actual work-cell PMV distributions for four cohorts on a shared axis (graphite = cellular, moss = open). The open-plan version widens PMV spread for every cohort and typically nudges sensation colder, making perimeter-to-core thermal inequality more legible rather than eliminating it.",
 }
 
 ACKNOWLEDGEMENTS = (
