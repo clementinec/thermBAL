@@ -31,7 +31,8 @@ This is still a mechanism study, not a spatial study.
 5. Records:
    - baseline PMV / PPD
    - baseline pathway decomposition
-   - shortest feasible recovery for each scenario
+   - shortest feasible recovery for each scenario by control displacement
+   - lowest estimated system-exergy recovery for each scenario
    - dominant recovery channel in watts
 
 ## Important Boundary
@@ -45,6 +46,15 @@ So the logic here is:
 - baseline discomfort: `|PMV| >= 2`
 - recovered state: `|PMV| <= 0.5`
 
+It now also adds a second layer of explicit system-side cost surrogates:
+
+- all-air sensible control: `Q = ρ c_p V̇ |ΔTa|`
+- radiant control: `Q = h_r A |ΔTr|`
+- airflow control: `P ∝ v^3`
+- humidity control: `Q = ṁ h_fg |ΔW|`
+
+These are converted into approximate electric / exergy input using fixed COP assumptions for a canonical office control zone. This is not a full HVAC model, but it avoids treating `ΔTa` and `ΔTr` as if they had the same plant implication.
+
 ## Outputs
 
 Running the analysis writes:
@@ -53,9 +63,11 @@ Running the analysis writes:
 - `out/scenario_baselines.csv`
 - `out/scenario_recoveries.csv`
 - `out/scenario_winners.csv`
+- `out/scenario_exergy_winners.csv`
 - `out/report.html`
 - `out/figures/extreme_baselines.png`
 - `out/figures/recovery_matrix.png`
+- `out/figures/system_cost_matrix.png`
 
 ## Run
 
@@ -73,6 +85,7 @@ This folder asks a narrower question:
 
 - when the occupant is already far into clear discomfort,
 - which environmental lever gives the shortest path back,
-- and which heat-transfer channel actually carries that recovery?
+- which heat-transfer channel actually carries that recovery,
+- and whether the same ranking still holds once a simple system exergy layer is added.
 
 That makes it easier to read the physics without mild cases blurring the result.

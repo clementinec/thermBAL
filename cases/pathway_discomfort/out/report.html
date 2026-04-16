@@ -27,7 +27,20 @@
 
   <div class="card">
     <h2>Method in One Paragraph</h2>
-    <p>One representative seated office occupant is evaluated with the repo's existing ISO 7730 PMV engine. Six severe discomfort archetypes are constructed so that each baseline state sits at or beyond <span class="mono">|PMV| ≥ 2.0</span>: bulk cold, radiant cold, convective cold, bulk hot, radiant hot, and hot-humid still air. Each state is then tested against four bounded single-lever interventions: air temperature only, mean radiant temperature only, airflow only, and humidity only. Recovery is defined by <span class="mono">|PMV| ≤ 0.5</span>. For each feasible recovery, the report records the minimum control move, the normalized effort within that lever's search range, and the dominant heat-transfer pathway change.</p>
+    <p>One representative seated office occupant is evaluated with the repo's existing ISO 7730 PMV engine. Six severe discomfort archetypes are constructed so that each baseline state sits at or beyond <span class="mono">|PMV| ≥ 2.0</span>: bulk cold, radiant cold, convective cold, bulk hot, radiant hot, and hot-humid still air. Each state is then tested against four bounded single-lever interventions: air temperature only, mean radiant temperature only, airflow only, and humidity only. Recovery is defined by <span class="mono">|PMV| ≤ 0.5</span>. A second layer then estimates system-side actuation using a canonical office control-zone surrogate: 50 L/s supply air for the all-air lever, a 12 m² radiant panel with <span class="mono">h_r = 4.7 W/m²K</span> for the radiant lever, cubic fan power for airflow, and latent load from humidity-ratio change for the humidity lever. Reported exergy is the estimated electric/input work after applying simplified COP assumptions.</p>
+  </div>
+
+  <div class="card section">
+    <h2>System-Side Surrogate Assumptions</h2>
+    <table>
+      <tbody>
+        <tr><th>All-air sensible control</th><td><span class="mono">Q = ρ c_p V̇ |ΔTa|</span> with <span class="mono">V̇ = 0.05 m³/s</span>, heating/cooling COP = 3.0</td></tr>
+        <tr><th>Radiant sensible control</th><td><span class="mono">Q = h_r A |ΔTr|</span> with <span class="mono">A = 12 m²</span>, <span class="mono">h_r = 4.7 W/m²K</span>, heating COP = 4.5, cooling COP = 5.5</td></tr>
+        <tr><th>Airflow control</th><td>Fan power surrogate <span class="mono">P ∝ v³</span> with <span class="mono">60 W</span> at <span class="mono">1.2 m/s</span></td></tr>
+        <tr><th>Humidity control</th><td><span class="mono">Q = ṁ h_fg |ΔW|</span> from humidity-ratio change, dehumidification COP = 1.8, humidification COP = 1.0</td></tr>
+      </tbody>
+    </table>
+    <p class="note">This is intentionally a system surrogate, not a full HVAC plant model. It exists to keep numeric input displacement from being misread as true plant effort.</p>
   </div>
 
   <div class="grid section">
@@ -63,7 +76,7 @@
   <div class="section">
     <h2>Shortest feasible recovery by scenario</h2>
     <table>
-      <thead><tr><th>Scenario</th><th>Winning lever</th><th>Normalized effort</th><th>Dominant channel</th><th>PMV</th><th>PPD</th></tr></thead>
+      <thead><tr><th>Scenario</th><th>Winning lever</th><th>Normalized control move</th><th>Dominant channel</th><th>PMV</th><th>PPD</th></tr></thead>
       <tbody><tr><td>Severe cold bulk</td><td>All-air (Ta only)</td><td>0.495</td><td>convection</td><td>-2.67 → -0.48</td><td>96.4% → 9.8%</td></tr>
 <tr><td>Cold radiant sink</td><td>All-air (Ta only)</td><td>0.386</td><td>convection</td><td>-2.15 → -0.49</td><td>83.1% → 10.0%</td></tr>
 <tr><td>Cold high-airflow draft</td><td>All-air (Ta only)</td><td>0.436</td><td>convection</td><td>-3.76 → -0.48</td><td>100.0% → 9.9%</td></tr>
@@ -74,13 +87,26 @@
   </div>
 
   <div class="section">
+    <h2>Lowest estimated system exergy by scenario</h2>
+    <table>
+      <thead><tr><th>Scenario</th><th>Winning lever</th><th>Estimated exergy</th><th>System mode</th><th>Normalized control move</th><th>PMV</th></tr></thead>
+      <tbody><tr><td>Severe cold bulk</td><td>Radiant (Tr only)</td><td>164.2</td><td>radiant heating</td><td>0.595</td><td>-2.67 → -0.49</td></tr>
+<tr><td>Cold radiant sink</td><td>Radiant (Tr only)</td><td>122.8</td><td>radiant heating</td><td>0.445</td><td>-2.15 → -0.49</td></tr>
+<tr><td>Cold high-airflow draft</td><td>All-air (Ta only)</td><td>193.2</td><td>air heating</td><td>0.436</td><td>-3.76 → -0.48</td></tr>
+<tr><td>Severe hot bulk</td><td>Radiant (Tr only)</td><td>99.5</td><td>radiant cooling</td><td>0.441</td><td>2.25 → 0.50</td></tr>
+<tr><td>Hot radiant gain</td><td>Radiant (Tr only)</td><td>95.4</td><td>radiant cooling</td><td>0.423</td><td>2.23 → 0.50</td></tr>
+<tr><td>Hot humid still air</td><td>Radiant (Tr only)</td><td>98.4</td><td>radiant cooling</td><td>0.436</td><td>2.30 → 0.49</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="section">
     <h2>Recovery ownership matrix</h2>
     <div class="grid">
       <div>
         <img src="figures/recovery_matrix.png" alt="Recovery ownership matrix">
       </div>
       <div class="card">
-        <p>The matrix condenses the single-lever recovery study. Every cell asks whether one control variable alone can drag the occupant from a clearly severe state back to <span class="mono">|PMV| ≤ 0.5</span>. The cell color identifies the dominant pathway change in that recovery, while the overlaid number gives the smallest normalized effort found in the bounded search.</p>
+        <p>The matrix condenses the single-lever recovery study. Every cell asks whether one control variable alone can drag the occupant from a clearly severe state back to <span class="mono">|PMV| ≤ 0.5</span>. The cell color identifies the dominant pathway change in that recovery, while the overlaid number gives the smallest normalized control move found in the bounded search.</p>
         <ul>
           <li><strong>6 of 6</strong> scenarios are won by all-air recovery when the target is PMV-only comfort restoration.</li>
           <li>Radiant correction remains feasible in <strong>5</strong> of 6 cases and is the consistent second path in every radiative archetype.</li>
@@ -92,27 +118,44 @@
   </div>
 
   <div class="section">
+    <h2>Estimated system exergy matrix</h2>
+    <div class="grid">
+      <div>
+        <img src="figures/system_cost_matrix.png" alt="Estimated system exergy matrix">
+      </div>
+      <div class="card">
+        <p>This second matrix uses the same feasible recoveries, but ranks them by estimated system exergy rather than by normalized input displacement. That is the distinction the original report was missing: changing <span class="mono">Tr</span> by one degree is not assumed to have the same plant implication as changing <span class="mono">Ta</span> by one degree.</p>
+        <ul>
+          <li><strong>5 of 6</strong> scenarios are exergy-optimal under the current surrogate assumptions.</li>
+          <li>Radiant correction becomes the lower-work option in most feasible hot and cold cases, even where all-air still wins on normalized control displacement.</li>
+          <li>The divergence between the two winner tables is the practical reason to separate occupant-side effectiveness from system-side cost.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
     <h2>Detailed recovery tests</h2>
     <p class="note">Each scenario below keeps three things visible at once: the severe baseline state, which single-lever controls are actually feasible, and which pathway does the real work when recovery is possible.</p>
-    <div class='card'><h3>Severe cold bulk</h3><p class='note'>Uniform cold room where both air and radiant temperatures are depressed.</p><p><span class='mono'>Ta=19.0 C, Tr=19.0 C, RH=50%, v=0.10 m/s, PMV=-2.67, PPD=96.4%</span></p><p class='note'>Mechanism class: <strong>bulk cold</strong>. Largest absolute pathway = <strong>radiative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.495 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+10.90 C</td><td>0.495</td><td>-2.67 → -0.48</td><td>96.4% → 9.8%</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+13.10 C</td><td>0.595</td><td>-2.67 → -0.49</td><td>96.4% → 10.1%</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>-2.67 → —</td><td>96.4% → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-2.67 → —</td><td>96.4% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Cold radiant sink</h3><p class='note'>Moderate air temperature with markedly colder surrounding surfaces.</p><p><span class='mono'>Ta=23.0 C, Tr=17.0 C, RH=50%, v=0.10 m/s, PMV=-2.15, PPD=83.1%</span></p><p class='note'>Mechanism class: <strong>radiant cold</strong>. Largest absolute pathway = <strong>radiative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.386 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+8.50 C</td><td>0.386</td><td>-2.15 → -0.49</td><td>83.1% → 10.0%</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+9.80 C</td><td>0.445</td><td>-2.15 → -0.49</td><td>83.1% → 10.0%</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>-2.15 → —</td><td>83.1% → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-2.15 → —</td><td>83.1% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Cold high-airflow draft</h3><p class='note'>Cool room where elevated air speed pushes the occupant into strong convective heat loss.</p><p><span class='mono'>Ta=20.0 C, Tr=20.0 C, RH=50%, v=0.60 m/s, PMV=-3.76, PPD=100.0%</span></p><p class='note'>Mechanism class: <strong>convective cold</strong>. Largest absolute pathway = <strong>convective loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.436 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+9.60 C</td><td>0.436</td><td>-3.76 → -0.48</td><td>100.0% → 9.9%</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="no">no</td><td>—</td><td>—</td><td>-3.76 → —</td><td>100.0% → —</td><td>—</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>-3.76 → —</td><td>100.0% → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-3.76 → —</td><td>100.0% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Severe hot bulk</h3><p class='note'>Uniform hot room where both air and radiant temperatures are elevated.</p><p><span class='mono'>Ta=32.0 C, Tr=32.0 C, RH=50%, v=0.10 m/s, PMV=2.25, PPD=86.6%</span></p><p class='note'>Mechanism class: <strong>bulk hot</strong>. Largest absolute pathway = <strong>evaporative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.395 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-8.70 C</td><td>0.395</td><td>2.25 → 0.49</td><td>86.6% → 10.0%</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-9.70 C</td><td>0.441</td><td>2.25 → 0.50</td><td>86.6% → 10.2%</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>2.25 → —</td><td>86.6% → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>2.25 → —</td><td>86.6% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Hot radiant gain</h3><p class='note'>Moderate air temperature with strongly overheated surrounding surfaces causing radiant heat gain.</p><p><span class='mono'>Ta=29.0 C, Tr=35.0 C, RH=50%, v=0.10 m/s, PMV=2.23, PPD=85.9%</span></p><p class='note'>Mechanism class: <strong>radiant hot</strong>. Largest absolute pathway = <strong>convective loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.364 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-8.00 C</td><td>0.364</td><td>2.23 → 0.50</td><td>85.9% → 10.1%</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-9.30 C</td><td>0.423</td><td>2.23 → 0.50</td><td>85.9% → 10.2%</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>2.23 → —</td><td>85.9% → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>2.23 → —</td><td>85.9% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Hot humid still air</h3><p class='note'>Hot-humid state with low air movement and suppressed evaporative relief.</p><p><span class='mono'>Ta=31.0 C, Tr=31.0 C, RH=80%, v=0.05 m/s, PMV=2.30, PPD=88.2%</span></p><p class='note'>Mechanism class: <strong>humid hot</strong>. Largest absolute pathway = <strong>radiative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.359 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-7.90 C</td><td>0.359</td><td>2.30 → 0.49</td><td>88.2% → 10.0%</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-9.60 C</td><td>0.436</td><td>2.30 → 0.49</td><td>88.2% → 10.0%</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>2.30 → —</td><td>88.2% → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>2.30 → —</td><td>88.2% → —</td><td>—</td></tr></tbody></table></div>
+    <div class='card'><h3>Severe cold bulk</h3><p class='note'>Uniform cold room where both air and radiant temperatures are depressed.</p><p><span class='mono'>Ta=19.0 C, Tr=19.0 C, RH=50%, v=0.10 m/s, PMV=-2.67, PPD=96.4%</span></p><p class='note'>Mechanism class: <strong>bulk cold</strong>. Largest absolute pathway = <strong>radiative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.495 normalized control move, dominant channel convection). Lowest estimated system exergy: <strong>Radiant (Tr only)</strong> (164.2 W electric/exergy surrogate, mode radiant heating).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+10.90 C</td><td>0.495</td><td>219.3 W</td><td>657.9 W</td><td>-2.67 → -0.48</td><td>96.4% → 9.8%</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+13.10 C</td><td>0.595</td><td>164.2 W</td><td>738.8 W</td><td>-2.67 → -0.49</td><td>96.4% → 10.1%</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-2.67 → —</td><td>96.4% → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-2.67 → —</td><td>96.4% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Cold radiant sink</h3><p class='note'>Moderate air temperature with markedly colder surrounding surfaces.</p><p><span class='mono'>Ta=23.0 C, Tr=17.0 C, RH=50%, v=0.10 m/s, PMV=-2.15, PPD=83.1%</span></p><p class='note'>Mechanism class: <strong>radiant cold</strong>. Largest absolute pathway = <strong>radiative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.386 normalized control move, dominant channel convection). Lowest estimated system exergy: <strong>Radiant (Tr only)</strong> (122.8 W electric/exergy surrogate, mode radiant heating).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+8.50 C</td><td>0.386</td><td>171.0 W</td><td>513.1 W</td><td>-2.15 → -0.49</td><td>83.1% → 10.0%</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+9.80 C</td><td>0.445</td><td>122.8 W</td><td>552.7 W</td><td>-2.15 → -0.49</td><td>83.1% → 10.0%</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-2.15 → —</td><td>83.1% → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-2.15 → —</td><td>83.1% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Cold high-airflow draft</h3><p class='note'>Cool room where elevated air speed pushes the occupant into strong convective heat loss.</p><p><span class='mono'>Ta=20.0 C, Tr=20.0 C, RH=50%, v=0.60 m/s, PMV=-3.76, PPD=100.0%</span></p><p class='note'>Mechanism class: <strong>convective cold</strong>. Largest absolute pathway = <strong>convective loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.436 normalized control move, dominant channel convection). Lowest estimated system exergy: <strong>All-air (Ta only)</strong> (193.2 W electric/exergy surrogate, mode air heating).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+9.60 C</td><td>0.436</td><td>193.2 W</td><td>579.5 W</td><td>-3.76 → -0.48</td><td>100.0% → 9.9%</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-3.76 → —</td><td>100.0% → —</td><td>—</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-3.76 → —</td><td>100.0% → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>-3.76 → —</td><td>100.0% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Severe hot bulk</h3><p class='note'>Uniform hot room where both air and radiant temperatures are elevated.</p><p><span class='mono'>Ta=32.0 C, Tr=32.0 C, RH=50%, v=0.10 m/s, PMV=2.25, PPD=86.6%</span></p><p class='note'>Mechanism class: <strong>bulk hot</strong>. Largest absolute pathway = <strong>evaporative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.395 normalized control move, dominant channel convection). Lowest estimated system exergy: <strong>Radiant (Tr only)</strong> (99.5 W electric/exergy surrogate, mode radiant cooling).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-8.70 C</td><td>0.395</td><td>175.0 W</td><td>525.1 W</td><td>2.25 → 0.49</td><td>86.6% → 10.0%</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-9.70 C</td><td>0.441</td><td>99.5 W</td><td>547.1 W</td><td>2.25 → 0.50</td><td>86.6% → 10.2%</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>2.25 → —</td><td>86.6% → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>2.25 → —</td><td>86.6% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Hot radiant gain</h3><p class='note'>Moderate air temperature with strongly overheated surrounding surfaces causing radiant heat gain.</p><p><span class='mono'>Ta=29.0 C, Tr=35.0 C, RH=50%, v=0.10 m/s, PMV=2.23, PPD=85.9%</span></p><p class='note'>Mechanism class: <strong>radiant hot</strong>. Largest absolute pathway = <strong>convective loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.364 normalized control move, dominant channel convection). Lowest estimated system exergy: <strong>Radiant (Tr only)</strong> (95.4 W electric/exergy surrogate, mode radiant cooling).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-8.00 C</td><td>0.364</td><td>161.0 W</td><td>482.9 W</td><td>2.23 → 0.50</td><td>85.9% → 10.1%</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-9.30 C</td><td>0.423</td><td>95.4 W</td><td>524.5 W</td><td>2.23 → 0.50</td><td>85.9% → 10.2%</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>2.23 → —</td><td>85.9% → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>2.23 → —</td><td>85.9% → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Hot humid still air</h3><p class='note'>Hot-humid state with low air movement and suppressed evaporative relief.</p><p><span class='mono'>Ta=31.0 C, Tr=31.0 C, RH=80%, v=0.05 m/s, PMV=2.30, PPD=88.2%</span></p><p class='note'>Mechanism class: <strong>humid hot</strong>. Largest absolute pathway = <strong>radiative loss</strong>. Shortest feasible path: <strong>All-air (Ta only)</strong> (0.359 normalized control move, dominant channel convection). Lowest estimated system exergy: <strong>Radiant (Tr only)</strong> (98.4 W electric/exergy surrogate, mode radiant cooling).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-7.90 C</td><td>0.359</td><td>158.9 W</td><td>476.8 W</td><td>2.30 → 0.49</td><td>88.2% → 10.0%</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-9.60 C</td><td>0.436</td><td>98.4 W</td><td>541.4 W</td><td>2.30 → 0.49</td><td>88.2% → 10.0%</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>2.30 → —</td><td>88.2% → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>—</td><td>—</td><td>2.30 → —</td><td>88.2% → —</td><td>—</td></tr></tbody></table></div>
   </div>
 
   <div class="section">
@@ -121,8 +164,8 @@
       <ul>
         <li>Severe discomfort states separate much more cleanly than mild PMV deviations. Once the baseline crosses <span class="mono">|PMV| ≥ 2.0</span>, the heat-balance signature of each archetype is visually obvious in the decomposition plot.</li>
         <li>At the same time, the shortest PMV-only recovery collapses toward dry-bulb control: all-air wins every scenario in this branch, even when the baseline state is visibly radiative or convective in origin.</li>
-        <li>That tension is the main result. The baseline pathways are different, but PMV-only recovery pushes them toward the same control answer unless an explicit local criterion is added.</li>
-        <li>Radiant correction survives as the coherent second path in the radiative cases, while airflow and humidity alone are too weak to pull these severe states back to <span class="mono">|PMV| ≤ 0.5</span>.</li>
+        <li>Once the simple system surrogate is added, the story changes. Radiant correction often becomes the lower-exergy option even when all-air still wins on normalized input displacement.</li>
+        <li>That tension is the main result. Occupant-side PMV recovery and system-side exergy cost are not the same ranking problem, and collapsing them into one scalar “effort” would be misleading.</li>
       </ul>
     </div>
   </div>

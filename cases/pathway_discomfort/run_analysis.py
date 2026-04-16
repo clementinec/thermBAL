@@ -26,7 +26,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from comfort_engine import ComfortState, Occupant, compute_pmv, du_bois_bsa, met_to_wm2
+from comfort_engine import (
+    ComfortState,
+    Occupant,
+    compute_pmv,
+    du_bois_bsa,
+    humidity_ratio,
+    met_to_wm2,
+    sat_vapor_pressure,
+)
 
 
 @dataclass(frozen=True)
@@ -61,6 +69,23 @@ REFERENCE_OCCUPANT = {
 REFERENCE_STATE = ComfortState(Ta=25.5, Tr=25.5, RH=50.0, v=0.10)
 PMV_DISCOMFORT_LIMIT = 2.0
 PMV_RECOVERY_TARGET = 0.5
+
+SYSTEM_ASSUMPTIONS = {
+    "rho_air": 1.2,
+    "cp_air": 1006.0,
+    "supply_air_flow_m3s": 0.05,
+    "radiant_active_area_m2": 12.0,
+    "h_r_panel_w_m2k": 4.7,
+    "cop_air_heating": 3.0,
+    "cop_air_cooling": 3.0,
+    "cop_radiant_heating": 4.5,
+    "cop_radiant_cooling": 5.5,
+    "cop_dehumidification": 1.8,
+    "cop_humidification": 1.0,
+    "latent_heat_vaporization_j_kg": 2.45e6,
+    "fan_power_max_w": 60.0,
+    "fan_v_max_m_s": 1.2,
+}
 
 SCENARIOS: Tuple[Scenario, ...] = (
     Scenario(
@@ -180,6 +205,14 @@ def evaluate(state: ComfortState, occupant: Occupant) -> Dict[str, float]:
     }
 
 
+def actual_vapor_pressure_pa(state: ComfortState) -> float:
+    return sat_vapor_pressure(state.Ta) * (state.RH / 100.0)
+
+
+def humidity_ratio_from_state(state: ComfortState) -> float:
+    return humidity_ratio(actual_vapor_pressure_pa(state))
+
+
 def dominant_channel(delta: Dict[str, float]) -> str:
     channel_map = {
         "convection": abs(delta["dQ_conv"]),
@@ -245,11 +278,15 @@ def recover_with_lever(scenario: Scenario, lever: Lever, occupant: Occupant) -> 
             "recovered_value": None,
             "delta_value": None,
             "normalized_effort": None,
+            "control_move": None,
             "baseline_pmv": baseline["PMV"],
             "recovered_pmv": None,
             "baseline_ppd": baseline["PPD"],
             "recovered_ppd": None,
             "dominant_channel": None,
+            "system_mode": None,
+            "system_thermal_w": None,
+            "system_exergy_w": None,
             "dQ_conv": None,
             "dQ_rad": None,
             "dE_sk": None,
@@ -257,12 +294,14 @@ def recover_with_lever(scenario: Scenario, lever: Lever, occupant: Occupant) -> 
         }
 
     effort, recovered, chosen_value = min(feasible, key=lambda item: item[0])
+    candidate_state = lever.apply(scenario, chosen_value)
     pathway_delta = {
         "dQ_conv": recovered["Q_conv"] - baseline["Q_conv"],
         "dQ_rad": recovered["Q_rad"] - baseline["Q_rad"],
         "dE_sk": recovered["E_sk"] - baseline["E_sk"],
         "dQ_res": recovered["Q_res"] - baseline["Q_res"],
     }
+    system_cost = estimate_system_cost(lever, scenario.state, candidate_state)
     return {
         "scenario_id": scenario.id,
         "scenario_label": scenario.label,
@@ -275,11 +314,15 @@ def recover_with_lever(scenario: Scenario, lever: Lever, occupant: Occupant) -> 
         "recovered_value": chosen_value,
         "delta_value": chosen_value - scenario_value,
         "normalized_effort": effort,
+        "control_move": abs(chosen_value - scenario_value),
         "baseline_pmv": baseline["PMV"],
         "recovered_pmv": recovered["PMV"],
         "baseline_ppd": baseline["PPD"],
         "recovered_ppd": recovered["PPD"],
         "dominant_channel": dominant_channel(pathway_delta),
+        "system_mode": system_cost["mode"],
+        "system_thermal_w": system_cost["thermal_w"],
+        "system_exergy_w": system_cost["exergy_w"],
         **pathway_delta,
     }
 
@@ -294,6 +337,84 @@ def select_winning_recoveries(recoveries: List[Dict[str, object]]) -> List[Dict[
         if current is None or float(row["normalized_effort"]) < float(current["normalized_effort"]):
             winners[sid] = row
     return list(winners.values())
+
+
+def select_min_exergy_recoveries(recoveries: List[Dict[str, object]]) -> List[Dict[str, object]]:
+    winners: Dict[str, Dict[str, object]] = {}
+    for row in recoveries:
+        if not row["feasible"]:
+            continue
+        sid = str(row["scenario_id"])
+        current = winners.get(sid)
+        if current is None or float(row["system_exergy_w"]) < float(current["system_exergy_w"]):
+            winners[sid] = row
+    return list(winners.values())
+
+
+def estimate_system_cost(lever: Lever, baseline: ComfortState, recovered: ComfortState) -> Dict[str, float | str]:
+    rho = SYSTEM_ASSUMPTIONS["rho_air"]
+    cp = SYSTEM_ASSUMPTIONS["cp_air"]
+    vdot = SYSTEM_ASSUMPTIONS["supply_air_flow_m3s"]
+    mdot = rho * vdot
+
+    if lever.id == "air_temp":
+        d_t = recovered.Ta - baseline.Ta
+        thermal_w = mdot * cp * abs(d_t)
+        if d_t >= 0.0:
+            return {
+                "mode": "air heating",
+                "thermal_w": thermal_w,
+                "exergy_w": thermal_w / SYSTEM_ASSUMPTIONS["cop_air_heating"],
+            }
+        return {
+            "mode": "air cooling",
+            "thermal_w": thermal_w,
+            "exergy_w": thermal_w / SYSTEM_ASSUMPTIONS["cop_air_cooling"],
+        }
+
+    if lever.id == "radiant":
+        d_t = recovered.Tr - baseline.Tr
+        thermal_w = SYSTEM_ASSUMPTIONS["h_r_panel_w_m2k"] * SYSTEM_ASSUMPTIONS["radiant_active_area_m2"] * abs(d_t)
+        if d_t >= 0.0:
+            return {
+                "mode": "radiant heating",
+                "thermal_w": thermal_w,
+                "exergy_w": thermal_w / SYSTEM_ASSUMPTIONS["cop_radiant_heating"],
+            }
+        return {
+            "mode": "radiant cooling",
+            "thermal_w": thermal_w,
+            "exergy_w": thermal_w / SYSTEM_ASSUMPTIONS["cop_radiant_cooling"],
+        }
+
+    if lever.id == "airflow":
+        p_max = SYSTEM_ASSUMPTIONS["fan_power_max_w"]
+        v_max = SYSTEM_ASSUMPTIONS["fan_v_max_m_s"]
+        base_power = p_max * (max(baseline.v, 0.0) / v_max) ** 3
+        new_power = p_max * (max(recovered.v, 0.0) / v_max) ** 3
+        return {
+            "mode": "fan power",
+            "thermal_w": abs(new_power - base_power),
+            "exergy_w": new_power - base_power,
+        }
+
+    if lever.id == "humidity":
+        w0 = humidity_ratio_from_state(baseline)
+        w1 = humidity_ratio_from_state(recovered)
+        thermal_w = mdot * SYSTEM_ASSUMPTIONS["latent_heat_vaporization_j_kg"] * abs(w1 - w0)
+        if w1 >= w0:
+            return {
+                "mode": "humidification",
+                "thermal_w": thermal_w,
+                "exergy_w": thermal_w / SYSTEM_ASSUMPTIONS["cop_humidification"],
+            }
+        return {
+            "mode": "dehumidification",
+            "thermal_w": thermal_w,
+            "exergy_w": thermal_w / SYSTEM_ASSUMPTIONS["cop_dehumidification"],
+        }
+
+    raise ValueError(f"Unknown lever id: {lever.id}")
 
 
 def write_csv(path: Path, rows: Iterable[Dict[str, object]]) -> None:
@@ -382,7 +503,7 @@ def save_recovery_matrix(recoveries: List[Dict[str, object]]) -> Path:
     ax.set_ylim(len(scenario_order) - 0.5, -0.5)
     ax.set_xticks(range(len(lever_labels)), lever_labels)
     ax.set_yticks(range(len(scenario_labels)), scenario_labels)
-    ax.set_title("Severe Discomfort Recovery Matrix\ncell color = dominant recovery channel, text = normalized effort")
+    ax.set_title("Severe Discomfort Recovery Matrix\ncell color = dominant recovery channel, text = normalized control move")
     ax.tick_params(axis="x", labelsize=8)
     ax.tick_params(axis="y", labelsize=8)
     ax.spines[:].set_visible(False)
@@ -404,11 +525,64 @@ def save_recovery_matrix(recoveries: List[Dict[str, object]]) -> Path:
     return out
 
 
+def save_system_cost_matrix(recoveries: List[Dict[str, object]]) -> Path:
+    scenario_order = [s.id for s in SCENARIOS]
+    scenario_labels = [s.label for s in SCENARIOS]
+    lever_order = [l.id for l in LEVERS]
+    lever_labels = [l.label.replace(" (", "\n(") for l in LEVERS]
+    lookup = {(str(r["scenario_id"]), str(r["lever_id"])): r for r in recoveries}
+
+    feasible_values = [
+        float(row["system_exergy_w"])
+        for row in recoveries
+        if row["feasible"] and row["system_exergy_w"] is not None and float(row["system_exergy_w"]) >= 0.0
+    ]
+    vmax = max(feasible_values) if feasible_values else 1.0
+    cmap = plt.get_cmap("YlGnBu")
+
+    fig, ax = plt.subplots(figsize=(8.4, 4.8), dpi=180)
+    for i, sid in enumerate(scenario_order):
+        for j, lid in enumerate(lever_order):
+            row = lookup[(sid, lid)]
+            if row["feasible"]:
+                value = float(row["system_exergy_w"])
+                if value < 0.0:
+                    color = "#B9E3C6"
+                else:
+                    color = cmap(min(1.0, value / max(vmax, 1e-9)))
+                text = f"{value:.0f}"
+            else:
+                color = "#E3E6E8"
+                text = "—"
+            rect = plt.Rectangle((j - 0.5, i - 0.5), 1.0, 1.0, facecolor=color, edgecolor="white", linewidth=1.5)
+            ax.add_patch(rect)
+            ax.text(j, i, text, ha="center", va="center", fontsize=8, color="#1F1F1F")
+
+    ax.set_xlim(-0.5, len(lever_order) - 0.5)
+    ax.set_ylim(len(scenario_order) - 0.5, -0.5)
+    ax.set_xticks(range(len(lever_labels)), lever_labels)
+    ax.set_yticks(range(len(scenario_labels)), scenario_labels)
+    ax.set_title("Estimated System Exergy Matrix\ncell text = electric / exergy surrogate W")
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
+    ax.spines[:].set_visible(False)
+
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0.0, vmax=vmax))
+    sm.set_array([])
+    fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04, label="estimated system exergy W")
+    fig.tight_layout()
+    out = FIGS / "system_cost_matrix.png"
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    return out
+
+
 def render_report(
     reference: Dict[str, float],
     baselines: List[Dict[str, object]],
     recoveries: List[Dict[str, object]],
     winners: List[Dict[str, object]],
+    exergy_winners: List[Dict[str, object]],
 ) -> None:
     recovery_groups: Dict[str, List[Dict[str, object]]] = {}
     for row in recoveries:
@@ -418,6 +592,11 @@ def render_report(
     for row in winners:
         label = str(row["lever_label"])
         winner_counts[label] = winner_counts.get(label, 0) + 1
+
+    exergy_winner_counts: Dict[str, int] = {}
+    for row in exergy_winners:
+        label = str(row["lever_label"])
+        exergy_winner_counts[label] = exergy_winner_counts.get(label, 0) + 1
 
     feasible_counts: Dict[str, int] = {}
     for row in recoveries:
@@ -470,11 +649,25 @@ def render_report(
         for row in winners
     )
 
+    exergy_winner_rows_html = "\n".join(
+        "<tr>"
+        f"<td>{html_escape(row['scenario_label'])}</td>"
+        f"<td>{html_escape(row['lever_label'])}</td>"
+        f"<td>{row['system_exergy_w']:.1f}</td>"
+        f"<td>{html_escape(row['system_mode'])}</td>"
+        f"<td>{row['normalized_effort']:.3f}</td>"
+        f"<td>{row['baseline_pmv']:.2f} → {row['recovered_pmv']:.2f}</td>"
+        "</tr>"
+        for row in exergy_winners
+    )
+
     winner_map = {str(row["scenario_id"]): row for row in winners}
+    exergy_winner_map = {str(row["scenario_id"]): row for row in exergy_winners}
     scenario_sections = []
     for base in baselines:
         rows = recovery_groups.get(str(base["scenario_id"]), [])
         winner = winner_map.get(str(base["scenario_id"]))
+        exergy_winner = exergy_winner_map.get(str(base["scenario_id"]))
         table_rows = []
         for row in rows:
             if row["feasible"]:
@@ -483,18 +676,24 @@ def render_report(
                 ppd_text = f"{row['baseline_ppd']:.1f}% → {row['recovered_ppd']:.1f}%"
                 channel_text = html_escape(row["dominant_channel"])
                 effort_text = f"{row['normalized_effort']:.3f}"
+                exergy_text = f"{row['system_exergy_w']:.1f} W"
+                thermal_text = f"{row['system_thermal_w']:.1f} W"
             else:
                 delta_text = "—"
                 pmv_text = f"{row['baseline_pmv']:.2f} → —"
                 ppd_text = f"{row['baseline_ppd']:.1f}% → —"
                 channel_text = "—"
                 effort_text = "—"
+                exergy_text = "—"
+                thermal_text = "—"
             table_rows.append(
                 "<tr>"
                 f"<td>{html_escape(row['lever_label'])}</td>"
                 f"<td class=\"{'ok' if row['feasible'] else 'no'}\">{'yes' if row['feasible'] else 'no'}</td>"
                 f"<td>{delta_text}</td>"
                 f"<td>{effort_text}</td>"
+                f"<td>{exergy_text}</td>"
+                f"<td>{thermal_text}</td>"
                 f"<td>{pmv_text}</td>"
                 f"<td>{ppd_text}</td>"
                 f"<td>{channel_text}</td>"
@@ -504,16 +703,22 @@ def render_report(
         if winner is not None:
             winner_text = (
                 f"Shortest feasible path: <strong>{html_escape(winner['lever_label'])}</strong> "
-                f"({winner['normalized_effort']:.3f} normalized effort, dominant channel {html_escape(winner['dominant_channel'])})."
+                f"({winner['normalized_effort']:.3f} normalized control move, dominant channel {html_escape(winner['dominant_channel'])})."
+            )
+        exergy_text = ""
+        if exergy_winner is not None:
+            exergy_text = (
+                f" Lowest estimated system exergy: <strong>{html_escape(exergy_winner['lever_label'])}</strong> "
+                f"({exergy_winner['system_exergy_w']:.1f} W electric/exergy surrogate, mode {html_escape(exergy_winner['system_mode'])})."
             )
         scenario_sections.append(
             "<div class='card'>"
             f"<h3>{html_escape(base['label'])}</h3>"
             f"<p class='note'>{html_escape(base['description'])}</p>"
             f"<p><span class='mono'>Ta={base['Ta']:.1f} C, Tr={base['Tr']:.1f} C, RH={base['RH']:.0f}%, v={base['v']:.2f} m/s, PMV={base['PMV']:.2f}, PPD={base['PPD']:.1f}%</span></p>"
-            f"<p class='note'>Mechanism class: <strong>{html_escape(base['mechanism_class'])}</strong>. Largest absolute pathway = <strong>{html_escape(base['dominant_note'])}</strong>. {winner_text}</p>"
+            f"<p class='note'>Mechanism class: <strong>{html_escape(base['mechanism_class'])}</strong>. Largest absolute pathway = <strong>{html_escape(base['dominant_note'])}</strong>. {winner_text}{exergy_text}</p>"
             "<table>"
-            "<thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead>"
+            "<thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized control move</th><th>Estimated exergy</th><th>Estimated thermal delivery</th><th>PMV recovery</th><th>PPD recovery</th><th>Dominant recovery channel</th></tr></thead>"
             "<tbody>"
             + "\n".join(table_rows)
             + "</tbody></table></div>"
@@ -532,7 +737,20 @@ def render_report(
 
   <div class="card">
     <h2>Method in One Paragraph</h2>
-    <p>One representative seated office occupant is evaluated with the repo's existing ISO 7730 PMV engine. Six severe discomfort archetypes are constructed so that each baseline state sits at or beyond <span class="mono">|PMV| ≥ {PMV_DISCOMFORT_LIMIT:.1f}</span>: bulk cold, radiant cold, convective cold, bulk hot, radiant hot, and hot-humid still air. Each state is then tested against four bounded single-lever interventions: air temperature only, mean radiant temperature only, airflow only, and humidity only. Recovery is defined by <span class="mono">|PMV| ≤ {PMV_RECOVERY_TARGET:.1f}</span>. For each feasible recovery, the report records the minimum control move, the normalized effort within that lever's search range, and the dominant heat-transfer pathway change.</p>
+    <p>One representative seated office occupant is evaluated with the repo's existing ISO 7730 PMV engine. Six severe discomfort archetypes are constructed so that each baseline state sits at or beyond <span class="mono">|PMV| ≥ {PMV_DISCOMFORT_LIMIT:.1f}</span>: bulk cold, radiant cold, convective cold, bulk hot, radiant hot, and hot-humid still air. Each state is then tested against four bounded single-lever interventions: air temperature only, mean radiant temperature only, airflow only, and humidity only. Recovery is defined by <span class="mono">|PMV| ≤ {PMV_RECOVERY_TARGET:.1f}</span>. A second layer then estimates system-side actuation using a canonical office control-zone surrogate: 50 L/s supply air for the all-air lever, a 12 m² radiant panel with <span class="mono">h_r = 4.7 W/m²K</span> for the radiant lever, cubic fan power for airflow, and latent load from humidity-ratio change for the humidity lever. Reported exergy is the estimated electric/input work after applying simplified COP assumptions.</p>
+  </div>
+
+  <div class="card section">
+    <h2>System-Side Surrogate Assumptions</h2>
+    <table>
+      <tbody>
+        <tr><th>All-air sensible control</th><td><span class="mono">Q = ρ c_p V̇ |ΔTa|</span> with <span class="mono">V̇ = 0.05 m³/s</span>, heating/cooling COP = 3.0</td></tr>
+        <tr><th>Radiant sensible control</th><td><span class="mono">Q = h_r A |ΔTr|</span> with <span class="mono">A = 12 m²</span>, <span class="mono">h_r = 4.7 W/m²K</span>, heating COP = 4.5, cooling COP = 5.5</td></tr>
+        <tr><th>Airflow control</th><td>Fan power surrogate <span class="mono">P ∝ v³</span> with <span class="mono">60 W</span> at <span class="mono">1.2 m/s</span></td></tr>
+        <tr><th>Humidity control</th><td><span class="mono">Q = ṁ h_fg |ΔW|</span> from humidity-ratio change, dehumidification COP = 1.8, humidification COP = 1.0</td></tr>
+      </tbody>
+    </table>
+    <p class="note">This is intentionally a system surrogate, not a full HVAC plant model. It exists to keep numeric input displacement from being misread as true plant effort.</p>
   </div>
 
   <div class="grid section">
@@ -563,8 +781,16 @@ def render_report(
   <div class="section">
     <h2>Shortest feasible recovery by scenario</h2>
     <table>
-      <thead><tr><th>Scenario</th><th>Winning lever</th><th>Normalized effort</th><th>Dominant channel</th><th>PMV</th><th>PPD</th></tr></thead>
+      <thead><tr><th>Scenario</th><th>Winning lever</th><th>Normalized control move</th><th>Dominant channel</th><th>PMV</th><th>PPD</th></tr></thead>
       <tbody>{winner_rows_html}</tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Lowest estimated system exergy by scenario</h2>
+    <table>
+      <thead><tr><th>Scenario</th><th>Winning lever</th><th>Estimated exergy</th><th>System mode</th><th>Normalized control move</th><th>PMV</th></tr></thead>
+      <tbody>{exergy_winner_rows_html}</tbody>
     </table>
   </div>
 
@@ -575,12 +801,29 @@ def render_report(
         <img src="figures/recovery_matrix.png" alt="Recovery ownership matrix">
       </div>
       <div class="card">
-        <p>The matrix condenses the single-lever recovery study. Every cell asks whether one control variable alone can drag the occupant from a clearly severe state back to <span class="mono">|PMV| ≤ {PMV_RECOVERY_TARGET:.1f}</span>. The cell color identifies the dominant pathway change in that recovery, while the overlaid number gives the smallest normalized effort found in the bounded search.</p>
+        <p>The matrix condenses the single-lever recovery study. Every cell asks whether one control variable alone can drag the occupant from a clearly severe state back to <span class="mono">|PMV| ≤ {PMV_RECOVERY_TARGET:.1f}</span>. The cell color identifies the dominant pathway change in that recovery, while the overlaid number gives the smallest normalized control move found in the bounded search.</p>
         <ul>
           <li><strong>{winner_counts.get('All-air (Ta only)', 0)} of {len(winners)}</strong> scenarios are won by all-air recovery when the target is PMV-only comfort restoration.</li>
           <li>Radiant correction remains feasible in <strong>{feasible_counts.get('Radiant (Tr only)', 0)}</strong> of {len(SCENARIOS)} cases and is the consistent second path in every radiative archetype.</li>
           <li>Airflow and humidity alone do not recover any of these severe PMV states to <span class="mono">|PMV| ≤ {PMV_RECOVERY_TARGET:.1f}</span> within the bounded search.</li>
           <li>So the matrix is doing two jobs at once: it shows PMV's bias toward dry-bulb correction, and it still preserves the distinct pathway signatures behind each baseline state.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Estimated system exergy matrix</h2>
+    <div class="grid">
+      <div>
+        <img src="figures/system_cost_matrix.png" alt="Estimated system exergy matrix">
+      </div>
+      <div class="card">
+        <p>This second matrix uses the same feasible recoveries, but ranks them by estimated system exergy rather than by normalized input displacement. That is the distinction the original report was missing: changing <span class="mono">Tr</span> by one degree is not assumed to have the same plant implication as changing <span class="mono">Ta</span> by one degree.</p>
+        <ul>
+          <li><strong>{exergy_winner_counts.get('Radiant (Tr only)', 0)} of {len(exergy_winners)}</strong> scenarios are exergy-optimal under the current surrogate assumptions.</li>
+          <li>Radiant correction becomes the lower-work option in most feasible hot and cold cases, even where all-air still wins on normalized control displacement.</li>
+          <li>The divergence between the two winner tables is the practical reason to separate occupant-side effectiveness from system-side cost.</li>
         </ul>
       </div>
     </div>
@@ -598,8 +841,8 @@ def render_report(
       <ul>
         <li>Severe discomfort states separate much more cleanly than mild PMV deviations. Once the baseline crosses <span class="mono">|PMV| ≥ {PMV_DISCOMFORT_LIMIT:.1f}</span>, the heat-balance signature of each archetype is visually obvious in the decomposition plot.</li>
         <li>At the same time, the shortest PMV-only recovery collapses toward dry-bulb control: all-air wins every scenario in this branch, even when the baseline state is visibly radiative or convective in origin.</li>
-        <li>That tension is the main result. The baseline pathways are different, but PMV-only recovery pushes them toward the same control answer unless an explicit local criterion is added.</li>
-        <li>Radiant correction survives as the coherent second path in the radiative cases, while airflow and humidity alone are too weak to pull these severe states back to <span class="mono">|PMV| ≤ {PMV_RECOVERY_TARGET:.1f}</span>.</li>
+        <li>Once the simple system surrogate is added, the story changes. Radiant correction often becomes the lower-exergy option even when all-air still wins on normalized input displacement.</li>
+        <li>That tension is the main result. Occupant-side PMV recovery and system-side exergy cost are not the same ranking problem, and collapsing them into one scalar “effort” would be misleading.</li>
       </ul>
     </div>
   </div>
@@ -636,15 +879,18 @@ def main() -> None:
 
     recoveries = [recover_with_lever(scenario, lever, occupant) for scenario in SCENARIOS for lever in LEVERS]
     winners = select_winning_recoveries(recoveries)
+    exergy_winners = select_min_exergy_recoveries(recoveries)
 
     write_csv(OUT / "scenario_baselines.csv", baselines)
     write_csv(OUT / "scenario_recoveries.csv", recoveries)
     write_csv(OUT / "scenario_winners.csv", winners)
+    write_csv(OUT / "scenario_exergy_winners.csv", exergy_winners)
     (OUT / "reference_summary.json").write_text(json.dumps(reference, indent=2), encoding="utf-8")
 
     save_baseline_pathway_plot(baselines)
     save_recovery_matrix(recoveries)
-    render_report(reference, baselines, recoveries, winners)
+    save_system_cost_matrix(recoveries)
+    render_report(reference, baselines, recoveries, winners, exergy_winners)
 
     print(f"Wrote report to {OUT / 'report.html'}")
 
