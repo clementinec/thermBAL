@@ -7,7 +7,7 @@ The intent is to test a simpler paper core than `thermBAL`:
 - start from one representative office occupant
 - benchmark the reference heat-balance pathways
 - perturb the environment through a small set of canonical discomfort states
-- test which single environmental lever most directly recovers PMV acceptability
+- test which single environmental lever most directly recovers PMV and local discomfort acceptability
 - inspect the recovery in pathway watts, not just in PMV
 
 This is **not** a spatial paper. It is a mechanism paper scaffold.
@@ -22,11 +22,12 @@ This is **not** a spatial paper. It is a mechanism paper scaffold.
    - `v`
    - `clo`
    - `met`
-3. Evaluates five canonical discomfort proxies:
+3. Evaluates six canonical discomfort proxies:
    - whole room too cold
-   - cold-radiant skew
-   - draft / excessive air movement
+   - cold radiant asymmetry
+   - ankle draft
    - mild warm bulk
+   - hot radiant asymmetry
    - warm humid still air
 4. Solves bounded **single-lever** recoveries for:
    - air temperature only
@@ -41,15 +42,17 @@ This is **not** a spatial paper. It is a mechanism paper scaffold.
 
 ## Important Boundary
 
-This prototype uses the current PMV engine only.
+This prototype uses the current PMV engine plus explicit local discomfort checks.
 
 That means:
 
-- `cold-radiant skew` is represented as a **whole-body MRT proxy**, not a local asymmetry discomfort model
-- `draft` is represented through the PMV effect of elevated air speed, not a dedicated local draft criterion
-- recovery is judged by `|PMV| <= 0.5`
+- bulk scenarios are judged by `|PMV| <= 0.5`
+- radiant asymmetry uses ISO-style dissatisfied-percentage curves for:
+  - `cool wall`
+  - `warm wall`
+- draft uses an ankle-draft dissatisfied-percentage model with whole-body thermal sensation approximated by PMV
 
-So this is appropriate for a **paper-framing test**, not yet a full publication result.
+So this is now a stronger mechanism prototype, while still remaining intentionally low-order and occupant-side.
 
 ## Outputs
 
@@ -59,9 +62,11 @@ Running the analysis writes:
 - `out/pathway_sensitivities.csv`
 - `out/scenario_baselines.csv`
 - `out/scenario_recoveries.csv`
+- `out/scenario_winners.csv`
 - `out/report.html`
 - `out/figures/reference_pathways.png`
 - `out/figures/pathway_sensitivities.png`
+- `out/figures/recovery_matrix.png`
 
 ## Run
 

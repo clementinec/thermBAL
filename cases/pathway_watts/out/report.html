@@ -17,13 +17,20 @@
     .mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; }
     .ok { color: #1d7f44; font-weight: 600; }
     .no { color: #9a2c2c; font-weight: 600; }
+    .section { margin-top: 34px; }
+    ul { margin-top: 6px; }
     </style>
 </head>
 <body>
   <h1>Pathway Watts Prototype</h1>
   <p class="lede">This is a deliberately stripped mechanism study built on the existing comfort engine. The question is whether a <em>Watts-first</em> paper core emerges once the problem is reduced to one office occupant, a few canonical discomfort states, and single-lever recoveries judged by PMV acceptability.</p>
 
-  <div class="grid">
+  <div class="card">
+    <h2>Method in One Paragraph</h2>
+    <p>One representative seated office occupant is evaluated with the repo's existing ISO 7730 PMV engine at a reference office state and across six canonical discomfort proxies. For bulk scenarios, recovery is defined by <span class="mono">|PMV| ≤ 0.5</span>. For local scenarios, the solve adds an explicit local discomfort criterion: radiant asymmetry is evaluated through ISO-style dissatisfied-percentage curves for <span class="mono">cool wall</span> and <span class="mono">warm wall</span>, while draft is evaluated through an ankle-draft dissatisfied-percentage model using local ankle air speed and whole-body thermal sensation approximated by PMV. Each scenario is then tested against four bounded single-lever interventions: air temperature only, radiant/mean-radiant correction, airflow only, and humidity only.</p>
+  </div>
+
+  <div class="grid section">
     <div class="card">
       <h2>Reference benchmark</h2>
       <p><span class="mono">Ta=25.5 C, Tr=25.5 C, RH=50%, v=0.10 m/s, met=1.00, clo=0.50</span></p>
@@ -44,7 +51,7 @@
     </div>
   </div>
 
-  <div class="grid">
+  <div class="grid section">
     <div>
       <img src="figures/pathway_sensitivities.png" alt="Sensitivity heatmap">
     </div>
@@ -63,42 +70,83 @@
     </div>
   </div>
 
+  <div class="section">
   <h2>Scenario baselines</h2>
   <table>
-    <thead><tr><th>Scenario</th><th>Ta</th><th>Tr</th><th>RH</th><th>v</th><th>PMV</th><th>PPD</th><th>Largest baseline pathway</th></tr></thead>
-    <tbody><tr><td>Whole room too cold</td><td>21.5</td><td>21.5</td><td>50</td><td>0.10</td><td>-1.71</td><td>62.4</td><td>radiation</td></tr>
-<tr><td>Cold-radiant skew</td><td>25.5</td><td>21.5</td><td>50</td><td>0.10</td><td>-0.92</td><td>22.8</td><td>radiation</td></tr>
-<tr><td>Draft / elevated air movement</td><td>26.0</td><td>26.0</td><td>50</td><td>0.75</td><td>-1.04</td><td>27.7</td><td>convection</td></tr>
-<tr><td>Mild warm bulk</td><td>28.0</td><td>28.0</td><td>50</td><td>0.10</td><td>0.72</td><td>15.8</td><td>radiation</td></tr>
-<tr><td>Warm humid still air</td><td>28.5</td><td>28.5</td><td>70</td><td>0.05</td><td>1.19</td><td>35.0</td><td>radiation</td></tr></tbody>
+    <thead><tr><th>Scenario</th><th>Mechanism</th><th>Ta</th><th>Tr</th><th>RH</th><th>v</th><th>PMV</th><th>PPD</th><th>Local metric</th><th>Baseline</th><th>Limit</th><th>Largest baseline pathway</th></tr></thead>
+    <tbody><tr><td>Whole room too cold</td><td>bulk cool</td><td>21.5</td><td>21.5</td><td>50</td><td>0.10</td><td>-1.71</td><td>62.4</td><td>—</td><td>—</td><td>—</td><td>radiation</td></tr>
+<tr><td>Cold radiant asymmetry</td><td>local radiant</td><td>25.5</td><td>25.5</td><td>50</td><td>0.10</td><td>-0.22</td><td>6.0</td><td>PPD_radiant (cool_wall)</td><td>7.8</td><td>≤ 5.0</td><td>radiation</td></tr>
+<tr><td>Ankle draft</td><td>local convective</td><td>25.5</td><td>25.5</td><td>50</td><td>0.10</td><td>-0.22</td><td>6.0</td><td>PPD_ankle_draft</td><td>37.4</td><td>≤ 20.0</td><td>radiation</td></tr>
+<tr><td>Mild warm bulk</td><td>bulk warm</td><td>28.0</td><td>28.0</td><td>50</td><td>0.10</td><td>0.72</td><td>15.8</td><td>—</td><td>—</td><td>—</td><td>radiation</td></tr>
+<tr><td>Hot radiant asymmetry</td><td>local radiant</td><td>25.5</td><td>25.5</td><td>50</td><td>0.10</td><td>-0.22</td><td>6.0</td><td>PPD_radiant (warm_wall)</td><td>5.9</td><td>≤ 5.0</td><td>radiation</td></tr>
+<tr><td>Warm humid still air</td><td>warm humid</td><td>28.5</td><td>28.5</td><td>70</td><td>0.05</td><td>1.19</td><td>35.0</td><td>—</td><td>—</td><td>—</td><td>radiation</td></tr></tbody>
   </table>
+  </div>
 
+  <div class="section">
+  <h2>Shortest feasible recovery by scenario</h2>
+  <table>
+    <thead><tr><th>Scenario</th><th>Winning lever</th><th>Normalized effort</th><th>Dominant channel</th><th>PMV</th><th>Local metric</th></tr></thead>
+    <tbody><tr><td>Whole room too cold</td><td>All-air (Ta only)</td><td>0.443</td><td>convection</td><td>-1.71 → -0.49</td><td>—</td></tr>
+<tr><td>Cold radiant asymmetry</td><td>Radiant (Tr only)</td><td>0.040</td><td>local_radiant</td><td>-0.22 → -0.22</td><td>7.8 → 5.0</td></tr>
+<tr><td>Ankle draft</td><td>Airflow control (v only)</td><td>0.290</td><td>local_airflow</td><td>-0.22 → -0.22</td><td>37.4 → 19.8</td></tr>
+<tr><td>Mild warm bulk</td><td>All-air (Ta only)</td><td>0.086</td><td>convection</td><td>0.72 → 0.48</td><td>—</td></tr>
+<tr><td>Hot radiant asymmetry</td><td>Radiant (Tr only)</td><td>0.063</td><td>local_radiant</td><td>-0.22 → -0.22</td><td>5.9 → 5.0</td></tr>
+<tr><td>Warm humid still air</td><td>All-air (Ta only)</td><td>0.229</td><td>convection</td><td>1.19 → 0.48</td><td>—</td></tr></tbody>
+  </table>
+  </div>
+
+  <div class="section">
+  <h2>Recovery ownership matrix</h2>
+  <div class="grid">
+    <div>
+      <img src="figures/recovery_matrix.png" alt="Recovery ownership matrix">
+    </div>
+    <div class="card">
+      <p>The matrix condenses the entire mechanism claim. For each scenario and lever, the cell shows whether recovery is feasible within the bounded search range. Feasible cells are colored by the dominant recovery channel and annotated with normalized control effort. This separates two questions that were conflated in the earlier PMV-only prototype: <strong>can a lever recover comfort?</strong> and <strong>which physical channel actually carries that recovery?</strong></p>
+      <ul>
+        <li>Local radiant asymmetry is owned by local radiant correction.</li>
+        <li>Ankle draft is owned by airflow reduction.</li>
+        <li>Mild warm bulk is the mixed case where multiple levers work through different channels.</li>
+      </ul>
+    </div>
+  </div>
+  </div>
+
+  <div class="section">
   <h2>Single-lever recovery tests</h2>
   <p class="note">These are deliberately minimal. Each row asks whether one control variable alone can return the state to <span class="mono">|PMV| ≤ 0.5</span> within bounded search ranges, and which heat-transfer pathway changes the most in the successful recovery.</p>
-  <div class='card'><h3>Whole room too cold</h3><p class='note'>Bulk cool proxy: air and radiant temperature both reduced.</p><p><span class='mono'>Ta=21.5 C, Tr=21.5 C, RH=50%, v=0.10 m/s, PMV=-1.71</span></p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>PMV recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+6.20 C</td><td>-1.71 → -0.49</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+7.30 C</td><td>-1.71 → -0.49</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>-1.71 → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>-1.71 → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Cold-radiant skew</h3><p class='note'>Whole-body MRT proxy for a cold-wall condition; not a local asymmetry model.</p><p><span class='mono'>Ta=25.5 C, Tr=21.5 C, RH=50%, v=0.10 m/s, PMV=-0.92</span></p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>PMV recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+2.20 C</td><td>-0.92 → -0.49</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+2.50 C</td><td>-0.92 → -0.49</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>-0.92 → —</td><td>—</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>-0.92 → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Draft / elevated air movement</h3><p class='note'>Cool-side discomfort induced by elevated air speed.</p><p><span class='mono'>Ta=26.0 C, Tr=26.0 C, RH=50%, v=0.75 m/s, PMV=-1.04</span></p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>PMV recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+1.50 C</td><td>-1.04 → -0.49</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+4.00 C</td><td>-1.04 → -0.49</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="ok">yes</td><td>-0.47 m/s</td><td>-1.04 → -0.49</td><td>convection</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>-1.04 → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Mild warm bulk</h3><p class='note'>Uniform warm-bulk state where multiple levers may recover similar PMV.</p><p><span class='mono'>Ta=28.0 C, Tr=28.0 C, RH=50%, v=0.10 m/s, PMV=0.72</span></p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>PMV recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-1.20 C</td><td>0.72 → 0.48</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-1.20 C</td><td>0.72 → 0.50</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="ok">yes</td><td>+0.10 m/s</td><td>0.72 → 0.49</td><td>convection</td></tr>
-<tr><td>Latent control (RH only)</td><td class="ok">yes</td><td>-22.00 %</td><td>0.72 → 0.50</td><td>evaporation</td></tr></tbody></table></div> <div class='card'><h3>Warm humid still air</h3><p class='note'>Warm-humid state with low air movement and evaporative constraint.</p><p><span class='mono'>Ta=28.5 C, Tr=28.5 C, RH=70%, v=0.05 m/s, PMV=1.19</span></p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>PMV recovery</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-3.20 C</td><td>1.19 → 0.48</td><td>convection</td></tr>
-<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-3.90 C</td><td>1.19 → 0.50</td><td>radiation</td></tr>
-<tr><td>Airflow control (v only)</td><td class="ok">yes</td><td>+0.57 m/s</td><td>1.19 → 0.50</td><td>convection</td></tr>
-<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>1.19 → —</td><td>—</td></tr></tbody></table></div>
+  <div class='card'><h3>Whole room too cold</h3><p class='note'>Bulk cool proxy: air and radiant temperature both reduced.</p><p><span class='mono'>Ta=21.5 C, Tr=21.5 C, RH=50%, v=0.10 m/s, PMV=-1.71</span></p><p class='note'>Mechanism class: <strong>bulk cool</strong>. Recovery criterion: |PMV| ≤ 0.5.  Shortest feasible path: <strong>All-air (Ta only)</strong> (0.443 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>+6.20 C</td><td>0.443</td><td>-1.71 → -0.49</td><td>—</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>+7.30 C</td><td>0.521</td><td>-1.71 → -0.49</td><td>—</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>-1.71 → —</td><td>—</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-1.71 → —</td><td>—</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Cold radiant asymmetry</h3><p class='note'>Neutral bulk state with a cold-wall asymmetry represented explicitly as local radiant asymmetry.</p><p><span class='mono'>Ta=25.5 C, Tr=25.5 C, RH=50%, v=0.10 m/s, PMV=-0.22</span></p><p class='note'>Mechanism class: <strong>local radiant</strong>. Recovery criterion: PPD_radiant ≤ 5%. Baseline local metric = 7.8 (limit 5.0).  Shortest feasible path: <strong>Radiant (Tr only)</strong> (0.040 normalized effort, dominant channel local_radiant).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>7.8 → —</td><td>—</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-1.40 C</td><td>0.040</td><td>-0.22 → -0.22</td><td>7.8 → 5.0</td><td>local_radiant</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>7.8 → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>7.8 → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Ankle draft</h3><p class='note'>Neutral bulk state with local ankle draft represented explicitly through ankle air speed.</p><p><span class='mono'>Ta=25.5 C, Tr=25.5 C, RH=50%, v=0.10 m/s, PMV=-0.22</span></p><p class='note'>Mechanism class: <strong>local convective</strong>. Recovery criterion: PPD_ankle_draft ≤ 20%. Baseline local metric = 37.4 (limit 20.0).  Shortest feasible path: <strong>Airflow control (v only)</strong> (0.290 normalized effort, dominant channel local_airflow).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>37.4 → —</td><td>—</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>37.4 → —</td><td>—</td></tr>
+<tr><td>Airflow control (v only)</td><td class="ok">yes</td><td>-0.29 m/s</td><td>0.290</td><td>-0.22 → -0.22</td><td>37.4 → 19.8</td><td>local_airflow</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>37.4 → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Mild warm bulk</h3><p class='note'>Uniform warm-bulk state where multiple levers may recover similar PMV.</p><p><span class='mono'>Ta=28.0 C, Tr=28.0 C, RH=50%, v=0.10 m/s, PMV=0.72</span></p><p class='note'>Mechanism class: <strong>bulk warm</strong>. Recovery criterion: |PMV| ≤ 0.5.  Shortest feasible path: <strong>All-air (Ta only)</strong> (0.086 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-1.20 C</td><td>0.086</td><td>0.72 → 0.48</td><td>—</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-1.20 C</td><td>0.086</td><td>0.72 → 0.50</td><td>—</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="ok">yes</td><td>+0.10 m/s</td><td>0.100</td><td>0.72 → 0.49</td><td>—</td><td>convection</td></tr>
+<tr><td>Latent control (RH only)</td><td class="ok">yes</td><td>-22.00 %</td><td>0.367</td><td>0.72 → 0.50</td><td>—</td><td>evaporation</td></tr></tbody></table></div> <div class='card'><h3>Hot radiant asymmetry</h3><p class='note'>Neutral bulk state with a warm-wall asymmetry represented explicitly as local radiant asymmetry.</p><p><span class='mono'>Ta=25.5 C, Tr=25.5 C, RH=50%, v=0.10 m/s, PMV=-0.22</span></p><p class='note'>Mechanism class: <strong>local radiant</strong>. Recovery criterion: PPD_radiant ≤ 5%. Baseline local metric = 5.9 (limit 5.0).  Shortest feasible path: <strong>Radiant (Tr only)</strong> (0.063 normalized effort, dominant channel local_radiant).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>5.9 → —</td><td>—</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-2.20 C</td><td>0.063</td><td>-0.22 → -0.22</td><td>5.9 → 5.0</td><td>local_radiant</td></tr>
+<tr><td>Airflow control (v only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>5.9 → —</td><td>—</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>-0.22 → —</td><td>5.9 → —</td><td>—</td></tr></tbody></table></div> <div class='card'><h3>Warm humid still air</h3><p class='note'>Warm-humid state with low air movement and evaporative constraint.</p><p><span class='mono'>Ta=28.5 C, Tr=28.5 C, RH=70%, v=0.05 m/s, PMV=1.19</span></p><p class='note'>Mechanism class: <strong>warm humid</strong>. Recovery criterion: |PMV| ≤ 0.5.  Shortest feasible path: <strong>All-air (Ta only)</strong> (0.229 normalized effort, dominant channel convection).</p><table><thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead><tbody><tr><td>All-air (Ta only)</td><td class="ok">yes</td><td>-3.20 C</td><td>0.229</td><td>1.19 → 0.48</td><td>—</td><td>convection</td></tr>
+<tr><td>Radiant (Tr only)</td><td class="ok">yes</td><td>-3.90 C</td><td>0.279</td><td>1.19 → 0.50</td><td>—</td><td>radiation</td></tr>
+<tr><td>Airflow control (v only)</td><td class="ok">yes</td><td>+0.57 m/s</td><td>0.570</td><td>1.19 → 0.50</td><td>—</td><td>convection</td></tr>
+<tr><td>Latent control (RH only)</td><td class="no">no</td><td>—</td><td>—</td><td>1.19 → —</td><td>—</td><td>—</td></tr></tbody></table></div>
+  </div>
 
+  <div class="section">
   <h2>Working interpretation</h2>
   <div class="card">
     <ul>
-      <li>This prototype is useful if the paper is really about <strong>pathway ownership</strong> rather than about a larger scenario catalog.</li>
-      <li>PMV is acting here as an acceptability boundary, not as the main object of interpretation.</li>
-      <li>The next decision is whether to keep this as a single-occupant mechanism paper or couple it back to demographic heterogeneity and spatial variation later.</li>
+      <li>The reference office benchmark already shows that radiation is slightly larger than convection, so a dry-bulb-only reading is incomplete before any special condition is introduced.</li>
+      <li>The local sensitivity map shows the cleanest mechanism split in the model: <span class="mono">Ta</span> moves convection, <span class="mono">Tr</span> moves radiation, <span class="mono">v</span> is a strong convective lever, and humidity is comparatively weak except through evaporation.</li>
+      <li>The warm-bulk case is the strongest shared-physics result: all four levers can recover PMV, but through different dominant pathway channels.</li>
+      <li>The explicit local criteria sharpen the ownership story. Radiant asymmetry now belongs to radiant correction, and ankle draft now belongs to airflow control, because PMV alone is no longer being asked to stand in for every local discomfort problem.</li>
     </ul>
+  </div>
   </div>
 </body>
 </html>

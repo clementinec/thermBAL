@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 CASE = Path(__file__).resolve().parent
 ROOT = CASE.parents[1]
@@ -34,7 +35,11 @@ class Scenario:
     id: str
     label: str
     description: str
+    mechanism_class: str
+    recovery_criterion: str
     state: ComfortState
+    local_kind: str = "none"
+    local_params: Dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -43,7 +48,8 @@ class Lever:
     label: str
     unit: str
     values: Tuple[float, ...]
-    apply: Callable[[ComfortState, float], ComfortState]
+    base_value: Callable[[Scenario, Dict[str, Any]], float]
+    apply: Callable[[Scenario, ComfortState, Dict[str, Any], float], Tuple[ComfortState, Dict[str, Any]]]
 
 
 REFERENCE_OCCUPANT = {
@@ -72,30 +78,54 @@ SCENARIOS: Tuple[Scenario, ...] = (
         id="cool_bulk",
         label="Whole room too cold",
         description="Bulk cool proxy: air and radiant temperature both reduced.",
+        mechanism_class="bulk cool",
+        recovery_criterion="|PMV| ≤ 0.5",
         state=ComfortState(Ta=21.5, Tr=21.5, RH=50.0, v=0.10),
     ),
     Scenario(
-        id="cold_radiant_skew",
-        label="Cold-radiant skew",
-        description="Whole-body MRT proxy for a cold-wall condition; not a local asymmetry model.",
-        state=ComfortState(Ta=25.5, Tr=21.5, RH=50.0, v=0.10),
+        id="cold_radiant_asym",
+        label="Cold radiant asymmetry",
+        description="Neutral bulk state with a cold-wall asymmetry represented explicitly as local radiant asymmetry.",
+        mechanism_class="local radiant",
+        recovery_criterion="PPD_radiant ≤ 5%",
+        state=ComfortState(Ta=25.5, Tr=25.5, RH=50.0, v=0.10),
+        local_kind="radiant_asymmetry",
+        local_params={"asymmetry_type": "cool_wall", "delta_pr": 12.0},
     ),
     Scenario(
         id="draft",
-        label="Draft / elevated air movement",
-        description="Cool-side discomfort induced by elevated air speed.",
-        state=ComfortState(Ta=26.0, Tr=26.0, RH=50.0, v=0.75),
+        label="Ankle draft",
+        description="Neutral bulk state with local ankle draft represented explicitly through ankle air speed.",
+        mechanism_class="local convective",
+        recovery_criterion="PPD_ankle_draft ≤ 20%",
+        state=ComfortState(Ta=25.5, Tr=25.5, RH=50.0, v=0.10),
+        local_kind="ankle_draft",
+        local_params={"v_ankle": 0.60},
     ),
     Scenario(
         id="warm_bulk",
         label="Mild warm bulk",
         description="Uniform warm-bulk state where multiple levers may recover similar PMV.",
+        mechanism_class="bulk warm",
+        recovery_criterion="|PMV| ≤ 0.5",
         state=ComfortState(Ta=28.0, Tr=28.0, RH=50.0, v=0.10),
+    ),
+    Scenario(
+        id="hot_radiant_asym",
+        label="Hot radiant asymmetry",
+        description="Neutral bulk state with a warm-wall asymmetry represented explicitly as local radiant asymmetry.",
+        mechanism_class="local radiant",
+        recovery_criterion="PPD_radiant ≤ 5%",
+        state=ComfortState(Ta=25.5, Tr=25.5, RH=50.0, v=0.10),
+        local_kind="radiant_asymmetry",
+        local_params={"asymmetry_type": "warm_wall", "delta_pr": 28.0},
     ),
     Scenario(
         id="warm_humid_still",
         label="Warm humid still air",
         description="Warm-humid state with low air movement and evaporative constraint.",
+        mechanism_class="warm humid",
+        recovery_criterion="|PMV| ≤ 0.5",
         state=ComfortState(Ta=28.5, Tr=28.5, RH=70.0, v=0.05),
     ),
 )
@@ -112,28 +142,44 @@ LEVERS: Tuple[Lever, ...] = (
         label="All-air (Ta only)",
         unit="C",
         values=_frange(18.0, 32.0, 0.1),
-        apply=lambda state, value: ComfortState(Ta=value, Tr=state.Tr, RH=state.RH, v=state.v),
+        base_value=lambda scenario, local: scenario.state.Ta,
+        apply=lambda scenario, state, local, value: (
+            ComfortState(Ta=value, Tr=state.Tr, RH=state.RH, v=state.v),
+            dict(local),
+        ),
     ),
     Lever(
         id="radiant",
         label="Radiant (Tr only)",
         unit="C",
         values=_frange(18.0, 32.0, 0.1),
-        apply=lambda state, value: ComfortState(Ta=state.Ta, Tr=value, RH=state.RH, v=state.v),
+        base_value=lambda scenario, local: local["delta_pr"] if scenario.local_kind == "radiant_asymmetry" else scenario.state.Tr,
+        apply=lambda scenario, state, local, value: (
+            (state if scenario.local_kind == "radiant_asymmetry" else ComfortState(Ta=state.Ta, Tr=value, RH=state.RH, v=state.v)),
+            ({**local, "delta_pr": value} if scenario.local_kind == "radiant_asymmetry" else dict(local)),
+        ),
     ),
     Lever(
         id="airflow",
         label="Airflow control (v only)",
         unit="m/s",
         values=_frange(0.0, 1.0, 0.01),
-        apply=lambda state, value: ComfortState(Ta=state.Ta, Tr=state.Tr, RH=state.RH, v=value),
+        base_value=lambda scenario, local: local["v_ankle"] if scenario.local_kind == "ankle_draft" else scenario.state.v,
+        apply=lambda scenario, state, local, value: (
+            (state if scenario.local_kind == "ankle_draft" else ComfortState(Ta=state.Ta, Tr=state.Tr, RH=state.RH, v=value)),
+            ({**local, "v_ankle": value} if scenario.local_kind == "ankle_draft" else dict(local)),
+        ),
     ),
     Lever(
         id="humidity",
         label="Latent control (RH only)",
         unit="%",
         values=_frange(20.0, 80.0, 1.0),
-        apply=lambda state, value: ComfortState(Ta=state.Ta, Tr=state.Tr, RH=value, v=state.v),
+        base_value=lambda scenario, local: scenario.state.RH,
+        apply=lambda scenario, state, local, value: (
+            ComfortState(Ta=state.Ta, Tr=state.Tr, RH=value, v=state.v),
+            dict(local),
+        ),
     ),
 )
 
@@ -169,6 +215,69 @@ def evaluate(state: ComfortState, occupant: Occupant) -> Dict[str, float]:
     }
 
 
+def clone_local_params(scenario: Scenario) -> Dict[str, Any]:
+    return dict(scenario.local_params or {})
+
+
+def radiant_asymmetry_ppd(delta_pr: float, asymmetry_type: str) -> float:
+    """ISO 7730-style radiant asymmetry dissatisfied percentage."""
+    x = max(0.0, float(delta_pr))
+    if asymmetry_type == "warm_ceiling":
+        return max(0.0, 100.0 / (1.0 + math.exp(2.84 - 0.174 * x)) - 5.5)
+    if asymmetry_type == "cool_wall":
+        return 100.0 / (1.0 + math.exp(6.61 - 0.345 * x))
+    if asymmetry_type == "cool_ceiling":
+        return 100.0 / (1.0 + math.exp(9.93 - 0.50 * x))
+    if asymmetry_type == "warm_wall":
+        return max(0.0, 100.0 / (1.0 + math.exp(3.72 - 0.052 * x)) - 3.5)
+    raise ValueError(f"Unknown asymmetry type: {asymmetry_type}")
+
+
+def ankle_draft_ppd(v_ankle: float, tsv: float) -> float:
+    """ASHRAE / Liu-style ankle draft dissatisfied percentage."""
+    z = -2.58 + 3.05 * max(0.0, v_ankle) - 1.06 * tsv
+    odds = math.exp(z)
+    return 100.0 * odds / (1.0 + odds)
+
+
+def evaluate_local_criterion(scenario: Scenario, pmv: float, local: Dict[str, Any]) -> Dict[str, Any]:
+    if scenario.local_kind == "none":
+        return {
+            "metric_label": "none",
+            "metric_value": None,
+            "limit": None,
+            "satisfied": True,
+        }
+    if scenario.local_kind == "radiant_asymmetry":
+        asymmetry_type = str(local["asymmetry_type"])
+        delta_pr = float(local["delta_pr"])
+        metric = radiant_asymmetry_ppd(delta_pr, asymmetry_type)
+        return {
+            "metric_label": f"PPD_radiant ({asymmetry_type})",
+            "metric_value": metric,
+            "limit": 5.0,
+            "satisfied": metric <= 5.0,
+            "delta_pr": delta_pr,
+        }
+    if scenario.local_kind == "ankle_draft":
+        v_ankle = float(local["v_ankle"])
+        metric = ankle_draft_ppd(v_ankle, pmv)
+        return {
+            "metric_label": "PPD_ankle_draft",
+            "metric_value": metric,
+            "limit": 20.0,
+            "satisfied": metric <= 20.0,
+            "v_ankle": v_ankle,
+        }
+    raise ValueError(f"Unknown local kind: {scenario.local_kind}")
+
+
+def candidate_values_for_lever(lever: Lever, scenario: Scenario) -> Tuple[float, ...]:
+    if lever.id == "radiant" and scenario.local_kind == "radiant_asymmetry":
+        return _frange(0.0, 35.0, 0.1)
+    return lever.values
+
+
 def finite_difference(var: str, step: float, state: ComfortState, occupant: Occupant) -> Dict[str, float]:
     if var in {"Ta", "Tr", "RH", "v"}:
         kwargs_plus = {"Ta": state.Ta, "Tr": state.Tr, "RH": state.RH, "v": state.v}
@@ -200,6 +309,28 @@ def dominant_channel(delta: Dict[str, float]) -> str:
     return max(channel_map, key=channel_map.get)
 
 
+def dominant_loss_component(result: Dict[str, float]) -> str:
+    channel_map = {
+        "convection": abs(result["Q_conv"]),
+        "radiation": abs(result["Q_rad"]),
+        "evaporation": abs(result["E_sk"]),
+        "respiration": abs(result["Q_res"]),
+    }
+    return max(channel_map, key=channel_map.get)
+
+
+def select_winning_recoveries(recoveries: List[Dict[str, object]]) -> List[Dict[str, object]]:
+    winners: Dict[str, Dict[str, object]] = {}
+    for row in recoveries:
+        if not row["feasible"]:
+            continue
+        sid = str(row["scenario_id"])
+        current = winners.get(sid)
+        if current is None or float(row["normalized_effort"]) < float(current["normalized_effort"]):
+            winners[sid] = row
+    return list(winners.values())
+
+
 def recover_with_lever(
     scenario: Scenario,
     lever: Lever,
@@ -207,25 +338,27 @@ def recover_with_lever(
     pmv_target: float = 0.5,
 ) -> Dict[str, object]:
     baseline = evaluate(scenario.state, occupant)
+    baseline_local = evaluate_local_criterion(scenario, baseline["PMV"], clone_local_params(scenario))
     feasible: List[Tuple[float, Dict[str, float], float]] = []
 
-    scenario_value = {
-        "air_temp": scenario.state.Ta,
-        "radiant": scenario.state.Tr,
-        "airflow": scenario.state.v,
-        "humidity": scenario.state.RH,
-    }[lever.id]
+    baseline_local_params = clone_local_params(scenario)
+    scenario_value = lever.base_value(scenario, baseline_local_params)
+    candidate_values = candidate_values_for_lever(lever, scenario)
+    lever_span = max(1e-9, max(candidate_values) - min(candidate_values))
 
-    for value in lever.values:
-        candidate_state = lever.apply(scenario.state, value)
+    for value in candidate_values:
+        candidate_state, candidate_local_params = lever.apply(scenario, scenario.state, baseline_local_params, value)
         candidate = evaluate(candidate_state, occupant)
-        if abs(candidate["PMV"]) <= pmv_target:
-            feasible.append((abs(value - scenario_value), candidate, value))
+        candidate_local = evaluate_local_criterion(scenario, candidate["PMV"], candidate_local_params)
+        if abs(candidate["PMV"]) <= pmv_target and candidate_local["satisfied"]:
+            effort = abs(value - scenario_value) / lever_span
+            feasible.append((effort, candidate, value, candidate_local))
 
     if not feasible:
         return {
             "scenario_id": scenario.id,
             "scenario_label": scenario.label,
+            "scenario_mechanism": scenario.mechanism_class,
             "lever_id": lever.id,
             "lever_label": lever.label,
             "lever_unit": lever.unit,
@@ -233,10 +366,15 @@ def recover_with_lever(
             "baseline_value": scenario_value,
             "recovered_value": None,
             "delta_value": None,
+            "normalized_effort": None,
             "baseline_pmv": baseline["PMV"],
             "recovered_pmv": None,
             "baseline_ppd": baseline["PPD"],
             "recovered_ppd": None,
+            "baseline_local_label": baseline_local["metric_label"],
+            "baseline_local_value": baseline_local["metric_value"],
+            "baseline_local_limit": baseline_local["limit"],
+            "recovered_local_value": None,
             "dominant_channel": None,
             "dQ_conv": None,
             "dQ_rad": None,
@@ -244,13 +382,19 @@ def recover_with_lever(
             "dQ_res": None,
         }
 
-    delta_abs, recovered, chosen_value = min(feasible, key=lambda item: item[0])
+    effort, recovered, chosen_value, recovered_local = min(feasible, key=lambda item: item[0])
     pathway_delta = {
         "dQ_conv": recovered["Q_conv"] - baseline["Q_conv"],
         "dQ_rad": recovered["Q_rad"] - baseline["Q_rad"],
         "dE_sk": recovered["E_sk"] - baseline["E_sk"],
         "dQ_res": recovered["Q_res"] - baseline["Q_res"],
     }
+    if scenario.local_kind == "radiant_asymmetry" and recovered_local["metric_value"] != baseline_local["metric_value"]:
+        dominant = "local_radiant"
+    elif scenario.local_kind == "ankle_draft" and recovered_local["metric_value"] != baseline_local["metric_value"]:
+        dominant = "local_airflow"
+    else:
+        dominant = dominant_channel(pathway_delta)
     return {
         "scenario_id": scenario.id,
         "scenario_label": scenario.label,
@@ -261,11 +405,16 @@ def recover_with_lever(
         "baseline_value": scenario_value,
         "recovered_value": chosen_value,
         "delta_value": chosen_value - scenario_value,
+        "normalized_effort": effort,
         "baseline_pmv": baseline["PMV"],
         "recovered_pmv": recovered["PMV"],
         "baseline_ppd": baseline["PPD"],
         "recovered_ppd": recovered["PPD"],
-        "dominant_channel": dominant_channel(pathway_delta),
+        "baseline_local_label": baseline_local["metric_label"],
+        "baseline_local_value": baseline_local["metric_value"],
+        "baseline_local_limit": baseline_local["limit"],
+        "recovered_local_value": recovered_local["metric_value"],
+        "dominant_channel": dominant,
         **pathway_delta,
     }
 
@@ -334,11 +483,71 @@ def save_sensitivity_heatmap(rows: List[Dict[str, object]]) -> Path:
     return out
 
 
+def save_recovery_matrix(recoveries: List[Dict[str, object]]) -> Path:
+    scenario_order = [s.id for s in SCENARIOS]
+    scenario_labels = [s.label for s in SCENARIOS]
+    lever_order = [l.id for l in LEVERS]
+    lever_labels = [l.label.replace(" (", "\n(") for l in LEVERS]
+
+    color_map = {
+        "convection": "#5B8FF9",
+        "radiation": "#F6A04D",
+        "evaporation": "#74C0A3",
+        "respiration": "#9AA5B1",
+        "local_radiant": "#B07CC6",
+        "local_airflow": "#56B3B4",
+        "infeasible": "#E3E6E8",
+    }
+
+    lookup = {(str(r["scenario_id"]), str(r["lever_id"])): r for r in recoveries}
+    fig, ax = plt.subplots(figsize=(8.6, 4.8), dpi=180)
+
+    for i, sid in enumerate(scenario_order):
+        for j, lid in enumerate(lever_order):
+            row = lookup[(sid, lid)]
+            channel = row["dominant_channel"] if row["feasible"] else "infeasible"
+            color = color_map[channel]
+            rect = plt.Rectangle((j - 0.5, i - 0.5), 1.0, 1.0, facecolor=color, edgecolor="white", linewidth=1.5)
+            ax.add_patch(rect)
+            if row["feasible"]:
+                text = f"{float(row['normalized_effort']):.2f}"
+            else:
+                text = "—"
+            ax.text(j, i, text, ha="center", va="center", fontsize=8, color="#1F1F1F")
+
+    ax.set_xlim(-0.5, len(lever_order) - 0.5)
+    ax.set_ylim(len(scenario_order) - 0.5, -0.5)
+    ax.set_xticks(range(len(lever_labels)), lever_labels)
+    ax.set_yticks(range(len(scenario_labels)), scenario_labels)
+    ax.set_title("Recovery Ownership Matrix\ncell color = dominant channel, cell text = normalized effort")
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
+    ax.spines[:].set_visible(False)
+
+    legend_items = [
+        ("convection", "Convection"),
+        ("radiation", "Radiation"),
+        ("evaporation", "Evaporation"),
+        ("local_radiant", "Local radiant"),
+        ("local_airflow", "Local airflow"),
+        ("infeasible", "Infeasible"),
+    ]
+    handles = [plt.Rectangle((0, 0), 1, 1, color=color_map[k]) for k, _ in legend_items]
+    labels = [label for _, label in legend_items]
+    ax.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=3, frameon=False, fontsize=8)
+    fig.tight_layout()
+    out = FIGS / "recovery_matrix.png"
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    return out
+
+
 def render_report(
     reference: Dict[str, float],
     sensitivity_rows: List[Dict[str, object]],
     baselines: List[Dict[str, object]],
     recoveries: List[Dict[str, object]],
+    winners: List[Dict[str, object]],
 ) -> None:
     recovery_groups: Dict[str, List[Dict[str, object]]] = {}
     for row in recoveries:
@@ -366,37 +575,75 @@ def render_report(
     .mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; }
     .ok { color: #1d7f44; font-weight: 600; }
     .no { color: #9a2c2c; font-weight: 600; }
+    .section { margin-top: 34px; }
+    ul { margin-top: 6px; }
     """
 
-    baseline_rows_html = "\n".join(
-        f"<tr><td>{html_escape(row['label'])}</td><td>{row['Ta']:.1f}</td><td>{row['Tr']:.1f}</td><td>{row['RH']:.0f}</td><td>{row['v']:.2f}</td><td>{row['PMV']:.2f}</td><td>{row['PPD']:.1f}</td><td>{row['dominant_loss']}</td></tr>"
-        for row in baselines
-    )
+    baseline_rows = []
+    for row in baselines:
+        local_label = "—" if row["local_label"] == "none" else html_escape(row["local_label"])
+        local_value = "—" if row["local_value"] is None else f"{row['local_value']:.1f}"
+        local_limit = "—" if row["local_limit"] is None else f"≤ {row['local_limit']:.1f}"
+        baseline_rows.append(
+            "<tr>"
+            f"<td>{html_escape(row['label'])}</td>"
+            f"<td>{html_escape(row['mechanism_class'])}</td>"
+            f"<td>{row['Ta']:.1f}</td><td>{row['Tr']:.1f}</td><td>{row['RH']:.0f}</td><td>{row['v']:.2f}</td>"
+            f"<td>{row['PMV']:.2f}</td><td>{row['PPD']:.1f}</td>"
+            f"<td>{local_label}</td>"
+            f"<td>{local_value}</td>"
+            f"<td>{local_limit}</td>"
+            f"<td>{html_escape(row['dominant_loss'])}</td></tr>"
+        )
+    baseline_rows_html = "\n".join(baseline_rows)
 
     sens_rows_html = "\n".join(
         f"<tr><td>{row['variable']}</td><td>{row['step']}</td><td>{row['unit']}</td><td>{row['PMV']:.3f}</td><td>{row['Q_conv']:.3f}</td><td>{row['Q_rad']:.3f}</td><td>{row['E_sk']:.3f}</td><td>{row['Q_res']:.3f}</td></tr>"
         for row in sensitivity_rows
     )
 
+    winner_map = {str(row["scenario_id"]): row for row in winners}
+    winner_rows = []
+    for row in winners:
+        local_metric = "—" if row["baseline_local_value"] is None else f"{row['baseline_local_value']:.1f} → {row['recovered_local_value']:.1f}"
+        winner_rows.append(
+            "<tr>"
+            f"<td>{html_escape(row['scenario_label'])}</td>"
+            f"<td>{html_escape(row['lever_label'])}</td>"
+            f"<td>{row['normalized_effort']:.3f}</td>"
+            f"<td>{html_escape(row['dominant_channel'])}</td>"
+            f"<td>{row['baseline_pmv']:.2f} → {row['recovered_pmv']:.2f}</td>"
+            f"<td>{local_metric}</td>"
+            "</tr>"
+        )
+    winner_rows_html = "\n".join(winner_rows)
+
     scenario_sections = []
     for base in baselines:
         rows = recovery_groups.get(str(base["scenario_id"]), [])
+        winner = winner_map.get(str(base["scenario_id"]))
         table_rows = []
         for row in rows:
             if row["feasible"]:
                 delta_text = f"{row['delta_value']:+.2f} {row['lever_unit']}"
                 pmv_text = f"{row['baseline_pmv']:.2f} → {row['recovered_pmv']:.2f}"
                 channel_text = html_escape(row["dominant_channel"])
+                effort_text = f"{row['normalized_effort']:.3f}"
+                local_text = "—" if row["baseline_local_value"] is None else f"{row['baseline_local_value']:.1f} → {row['recovered_local_value']:.1f}"
             else:
                 delta_text = "—"
                 pmv_text = f"{row['baseline_pmv']:.2f} → —"
                 channel_text = "—"
+                effort_text = "—"
+                local_text = "—" if row["baseline_local_value"] is None else f"{row['baseline_local_value']:.1f} → —"
             table_rows.append(
                 "<tr>"
                 f"<td>{html_escape(row['lever_label'])}</td>"
                 f"<td class=\"{'ok' if row['feasible'] else 'no'}\">{'yes' if row['feasible'] else 'no'}</td>"
                 f"<td>{delta_text}</td>"
+                f"<td>{effort_text}</td>"
                 f"<td>{pmv_text}</td>"
+                f"<td>{local_text}</td>"
                 f"<td>{channel_text}</td>"
                 "</tr>"
             )
@@ -405,8 +652,12 @@ def render_report(
             f"<h3>{html_escape(base['label'])}</h3>"
             f"<p class='note'>{html_escape(base['description'])}</p>"
             f"<p><span class='mono'>Ta={base['Ta']:.1f} C, Tr={base['Tr']:.1f} C, RH={base['RH']:.0f}%, v={base['v']:.2f} m/s, PMV={base['PMV']:.2f}</span></p>"
+            f"<p class='note'>Mechanism class: <strong>{html_escape(base['mechanism_class'])}</strong>. Recovery criterion: {html_escape(base['recovery_criterion'])}. "
+            + ("" if base["local_value"] is None else f"Baseline local metric = {base['local_value']:.1f} (limit {base['local_limit']:.1f}). ")
+            + ("" if winner is None else f" Shortest feasible path: <strong>{html_escape(winner['lever_label'])}</strong> ({winner['normalized_effort']:.3f} normalized effort, dominant channel {html_escape(winner['dominant_channel'])}).")
+            + "</p>"
             "<table>"
-            "<thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>PMV recovery</th><th>Dominant recovery channel</th></tr></thead>"
+            "<thead><tr><th>Lever</th><th>Feasible</th><th>Minimum control move</th><th>Normalized effort</th><th>PMV recovery</th><th>Local criterion</th><th>Dominant recovery channel</th></tr></thead>"
             "<tbody>"
             + "\n".join(table_rows)
             + "</tbody></table></div>"
@@ -423,7 +674,12 @@ def render_report(
   <h1>Pathway Watts Prototype</h1>
   <p class="lede">This is a deliberately stripped mechanism study built on the existing comfort engine. The question is whether a <em>Watts-first</em> paper core emerges once the problem is reduced to one office occupant, a few canonical discomfort states, and single-lever recoveries judged by PMV acceptability.</p>
 
-  <div class="grid">
+  <div class="card">
+    <h2>Method in One Paragraph</h2>
+    <p>One representative seated office occupant is evaluated with the repo's existing ISO 7730 PMV engine at a reference office state and across six canonical discomfort proxies. For bulk scenarios, recovery is defined by <span class="mono">|PMV| ≤ 0.5</span>. For local scenarios, the solve adds an explicit local discomfort criterion: radiant asymmetry is evaluated through ISO-style dissatisfied-percentage curves for <span class="mono">cool wall</span> and <span class="mono">warm wall</span>, while draft is evaluated through an ankle-draft dissatisfied-percentage model using local ankle air speed and whole-body thermal sensation approximated by PMV. Each scenario is then tested against four bounded single-lever interventions: air temperature only, radiant/mean-radiant correction, airflow only, and humidity only.</p>
+  </div>
+
+  <div class="grid section">
     <div class="card">
       <h2>Reference benchmark</h2>
       <p><span class="mono">Ta={reference['Ta']:.1f} C, Tr={reference['Tr']:.1f} C, RH={reference['RH']:.0f}%, v={reference['v']:.2f} m/s, met={reference['met']:.2f}, clo={reference['clo']:.2f}</span></p>
@@ -444,7 +700,7 @@ def render_report(
     </div>
   </div>
 
-  <div class="grid">
+  <div class="grid section">
     <div>
       <img src="figures/pathway_sensitivities.png" alt="Sensitivity heatmap">
     </div>
@@ -458,23 +714,55 @@ def render_report(
     </div>
   </div>
 
+  <div class="section">
   <h2>Scenario baselines</h2>
   <table>
-    <thead><tr><th>Scenario</th><th>Ta</th><th>Tr</th><th>RH</th><th>v</th><th>PMV</th><th>PPD</th><th>Largest baseline pathway</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Mechanism</th><th>Ta</th><th>Tr</th><th>RH</th><th>v</th><th>PMV</th><th>PPD</th><th>Local metric</th><th>Baseline</th><th>Limit</th><th>Largest baseline pathway</th></tr></thead>
     <tbody>{baseline_rows_html}</tbody>
   </table>
+  </div>
 
+  <div class="section">
+  <h2>Shortest feasible recovery by scenario</h2>
+  <table>
+    <thead><tr><th>Scenario</th><th>Winning lever</th><th>Normalized effort</th><th>Dominant channel</th><th>PMV</th><th>Local metric</th></tr></thead>
+    <tbody>{winner_rows_html}</tbody>
+  </table>
+  </div>
+
+  <div class="section">
+  <h2>Recovery ownership matrix</h2>
+  <div class="grid">
+    <div>
+      <img src="figures/recovery_matrix.png" alt="Recovery ownership matrix">
+    </div>
+    <div class="card">
+      <p>The matrix condenses the entire mechanism claim. For each scenario and lever, the cell shows whether recovery is feasible within the bounded search range. Feasible cells are colored by the dominant recovery channel and annotated with normalized control effort. This separates two questions that were conflated in the earlier PMV-only prototype: <strong>can a lever recover comfort?</strong> and <strong>which physical channel actually carries that recovery?</strong></p>
+      <ul>
+        <li>Local radiant asymmetry is owned by local radiant correction.</li>
+        <li>Ankle draft is owned by airflow reduction.</li>
+        <li>Mild warm bulk is the mixed case where multiple levers work through different channels.</li>
+      </ul>
+    </div>
+  </div>
+  </div>
+
+  <div class="section">
   <h2>Single-lever recovery tests</h2>
   <p class="note">These are deliberately minimal. Each row asks whether one control variable alone can return the state to <span class="mono">|PMV| ≤ 0.5</span> within bounded search ranges, and which heat-transfer pathway changes the most in the successful recovery.</p>
   {' '.join(scenario_sections)}
+  </div>
 
+  <div class="section">
   <h2>Working interpretation</h2>
   <div class="card">
     <ul>
-      <li>This prototype is useful if the paper is really about <strong>pathway ownership</strong> rather than about a larger scenario catalog.</li>
-      <li>PMV is acting here as an acceptability boundary, not as the main object of interpretation.</li>
-      <li>The next decision is whether to keep this as a single-occupant mechanism paper or couple it back to demographic heterogeneity and spatial variation later.</li>
+      <li>The reference office benchmark already shows that radiation is slightly larger than convection, so a dry-bulb-only reading is incomplete before any special condition is introduced.</li>
+      <li>The local sensitivity map shows the cleanest mechanism split in the model: <span class="mono">Ta</span> moves convection, <span class="mono">Tr</span> moves radiation, <span class="mono">v</span> is a strong convective lever, and humidity is comparatively weak except through evaporation.</li>
+      <li>The warm-bulk case is the strongest shared-physics result: all four levers can recover PMV, but through different dominant pathway channels.</li>
+      <li>The explicit local criteria sharpen the ownership story. Radiant asymmetry now belongs to radiant correction, and ankle draft now belongs to airflow control, because PMV alone is no longer being asked to stand in for every local discomfort problem.</li>
     </ul>
+  </div>
   </div>
 </body>
 </html>
@@ -502,33 +790,36 @@ def main() -> None:
     baselines: List[Dict[str, object]] = []
     for scenario in SCENARIOS:
         baseline = evaluate(scenario.state, occupant)
+        baseline_local = evaluate_local_criterion(scenario, baseline["PMV"], clone_local_params(scenario))
         baseline.update(
             {
                 "scenario_id": scenario.id,
                 "label": scenario.label,
                 "description": scenario.description,
-                "dominant_loss": dominant_channel(
-                    {
-                        "dQ_conv": baseline["Q_conv"],
-                        "dQ_rad": baseline["Q_rad"],
-                        "dE_sk": baseline["E_sk"],
-                        "dQ_res": baseline["Q_res"],
-                    }
-                ),
+                "mechanism_class": scenario.mechanism_class,
+                "recovery_criterion": scenario.recovery_criterion,
+                "dominant_loss": dominant_loss_component(baseline),
+                "local_label": baseline_local["metric_label"],
+                "local_value": baseline_local["metric_value"],
+                "local_limit": baseline_local["limit"],
+                "local_satisfied": baseline_local["satisfied"],
             }
         )
         baselines.append(baseline)
 
     recoveries = [recover_with_lever(scenario, lever, occupant) for scenario in SCENARIOS for lever in LEVERS]
+    winners = select_winning_recoveries(recoveries)
 
     write_csv(OUT / "pathway_sensitivities.csv", sensitivity_rows)
     write_csv(OUT / "scenario_baselines.csv", baselines)
     write_csv(OUT / "scenario_recoveries.csv", recoveries)
+    write_csv(OUT / "scenario_winners.csv", winners)
     (OUT / "reference_summary.json").write_text(json.dumps(reference, indent=2), encoding="utf-8")
 
     save_reference_plot(reference)
     save_sensitivity_heatmap(sensitivity_rows)
-    render_report(reference, sensitivity_rows, baselines, recoveries)
+    save_recovery_matrix(recoveries)
+    render_report(reference, sensitivity_rows, baselines, recoveries, winners)
 
     print(f"Wrote report to {OUT / 'report.html'}")
 
