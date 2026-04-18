@@ -39,6 +39,8 @@ This is still a mechanism study, not a spatial study.
 
 This branch is intentionally simpler than `pathway_watts`.
 
+The reference office occupant in this branch is now set to `0.9 met` rather than `1.0 met`, so the severe baseline and recovery results are not anchored to the higher sedentary default.
+
 It does **not** add local radiant-asymmetry or ankle-draft dissatisfaction models. Instead, it shifts the entire experiment to stronger baseline states where the PMV signal itself is already unambiguous. The point is to understand recovery under clearly severe cold and hot conditions before layering local criteria back in.
 
 So the logic here is:

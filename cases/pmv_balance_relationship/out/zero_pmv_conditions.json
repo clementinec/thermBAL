@@ -1,0 +1,26 @@
+[
+  {
+    "id": "dry_still",
+    "label": "RH 30%, v 0.05 m/s",
+    "RH": 30.0,
+    "v": 0.05
+  },
+  {
+    "id": "neutral_still",
+    "label": "RH 50%, v 0.10 m/s",
+    "RH": 50.0,
+    "v": 0.1
+  },
+  {
+    "id": "humid_still",
+    "label": "RH 80%, v 0.05 m/s",
+    "RH": 80.0,
+    "v": 0.05
+  },
+  {
+    "id": "neutral_moving",
+    "label": "RH 50%, v 0.20 m/s",
+    "RH": 50.0,
+    "v": 0.2
+  }
+]

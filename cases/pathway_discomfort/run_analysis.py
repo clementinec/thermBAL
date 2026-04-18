@@ -63,7 +63,7 @@ REFERENCE_OCCUPANT = {
     "height_cm": 170.0,
     "weight_kg": 70.0,
     "clo": 0.5,
-    "met": 1.0,
+    "met": 0.9,
 }
 
 REFERENCE_STATE = ComfortState(Ta=25.5, Tr=25.5, RH=50.0, v=0.10)
@@ -733,7 +733,7 @@ def render_report(
 </head>
 <body>
   <h1>Pathway Discomfort</h1>
-  <p class="lede">This branch pushes the mechanism study into clearly severe states. Every baseline scenario is selected so the representative office occupant begins at <span class="mono">|PMV| ≥ {PMV_DISCOMFORT_LIMIT:.1f}</span>, which makes the discomfort signal unambiguous before any recovery logic is tested. The question is then practical rather than abstract: once the occupant is plainly too cold or too hot, which single environmental lever recovers comfort most directly, and through which pathway watts?</p>
+  <p class="lede">This branch pushes the mechanism study into clearly severe states. Every baseline scenario is selected so the representative office occupant begins at <span class="mono">|PMV| ≥ {PMV_DISCOMFORT_LIMIT:.1f}</span>, which makes the discomfort signal unambiguous before any recovery logic is tested. The office default here is set to <span class="mono">0.9 met</span> rather than <span class="mono">1.0 met</span>, so the branch does not quietly inherit the higher sedentary assumption. The question is then practical rather than abstract: once the occupant is plainly too cold or too hot, which single environmental lever recovers comfort most directly, and through which pathway watts?</p>
 
   <div class="card">
     <h2>Method in One Paragraph</h2>

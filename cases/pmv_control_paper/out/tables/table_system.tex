@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{System-side surrogate assumptions used to convert control moves into approximate exergy/electric input.}
+\label{tab:system}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{p{3.0cm}p{4.5cm}p{6.0cm}}
+\toprule
+Lever & Surrogate relation & Assumptions \\
+\midrule
+All-air sensible control & $Q = \rho c_p \dot V |\Delta T_a|$ & 0.05 m$^3$/s, COP = 3.0/3.0 \\
+Radiant control & $Q = h_r A |\Delta T_r|$ & $h_r$ = 4.7 W/m$^2$K, $A$ = 12 m$^2$, COP = 4.5/5.5 \\
+Airflow control & $P \propto v^3$ & fan power max = 60 W at 1.2 m/s \\
+Latent control & $Q = \dot m h_{{fg}} |\Delta W|$ & $h_{fg}$ = 2.45e+06 J/kg, COP = 1.8/1.0 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\begin{flushleft}\footnotesize These are low-order plant surrogates used only for ranking, not full HVAC models.\end{flushleft}
+\end{table}

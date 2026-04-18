@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PMV Balance Relationship</title>
+  <style>
+    body { font-family: Georgia, 'Times New Roman', serif; margin: 32px auto; max-width: 1120px; color: #222; line-height: 1.45; }
+    h1, h2, h3 { font-family: Helvetica, Arial, sans-serif; color: #1f2b33; }
+    .lede { font-size: 18px; max-width: 920px; }
+    .note { color: #5b6670; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1.08fr 1fr; gap: 24px; margin: 24px 0 32px; align-items: start; }
+    .card { border: 1px solid #d8dde1; border-radius: 10px; padding: 18px; background: #fbfcfd; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0 24px; font-size: 14px; }
+    th, td { border-bottom: 1px solid #e1e6ea; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f3f6f8; font-family: Helvetica, Arial, sans-serif; }
+    img { width: 100%; border: 1px solid #d8dde1; border-radius: 10px; background: white; }
+    .mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; }
+    .section { margin-top: 34px; }
+    ul { margin-top: 6px; }
+    </style>
+</head>
+<body>
+  <h1>PMV, PPD, Thermal Load, and Pathway Effectiveness</h1>
+  <p class="lede">This study separates four things that are often collapsed together: <strong>PMV</strong> as a deterministic mapping from thermal load, <strong>PPD</strong> as a deterministic mapping from PMV, <strong>pathway decomposition</strong> as the way the environment achieves that load, and <strong>system-side exergy</strong> as the cost of producing that environmental change. That distinction matters because PMV itself does not “know” whether a recovery came through air or radiation once the total thermal load has been changed.</p>
+
+  <div class="card">
+    <h2>What the Model Actually Says</h2>
+    <p>In this codebase, PMV is computed exactly as <span class="mono">PMV = (0.303 * exp(-0.036 * M) + 0.028) * (H - L)</span>, where <span class="mono">H = M - W</span> is internal sensible generation and <span class="mono">L = Q_conv + Q_rad + E_sk + Q_res</span> is the total heat loss term. PPD is then computed as <span class="mono">100 - 95 * exp(-0.03353 * PMV^4 - 0.2179 * PMV^2)</span>. So for a fixed metabolic rate, PMV is linear in thermal load, and PPD is a deterministic transform of PMV. PPD is <strong>not</strong> model accuracy, confidence, or probability that a TSV prediction is correct; it is the model's predicted fraction dissatisfied under the PMV framework. The default office reference in this branch is set to <span class="mono">0.9 met</span>, and the comparison band is <span class="mono">0.8 / 0.9 / 1.0 / 1.2 met</span>, rather than quietly assuming <span class="mono">1.0 met</span> as the universal sedentary office default.</p>
+  </div>
+
+  <div class="grid section">
+    <div>
+      <img src="figures/pmv_vs_load.png" alt="PMV versus thermal load">
+    </div>
+    <div class="card">
+      <h2>PMV vs Thermal Load</h2>
+      <p>The scatter at left is sampled directly from the comfort engine across many environmental states. The dashed lines are the exact theoretical relation for each metabolic rate. They lie on top of the samples because, for a fixed <span class="mono">M</span>, PMV is literally linear in <span class="mono">H - L</span>.</p>
+      <table>
+        <thead><tr><th>Occupant</th><th>PMV factor</th></tr></thead>
+        <tbody><tr><td>0.8 met</td><td>0.0848</td></tr>
+<tr><td>0.9 met</td><td>0.0740</td></tr>
+<tr><td>1.0 met</td><td>0.0653</td></tr>
+<tr><td>1.2 met</td><td>0.0526</td></tr></tbody>
+      </table>
+      <p class="note">Implication: once total thermal load is known, PMV mostly hides pathway identity. Pathways matter because they are how the environment changes <span class="mono">H - L</span>, not because PMV assigns separate meaning to convective and radiative watts.</p>
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div class="card">
+      <h2>PPD vs PMV</h2>
+      <p>The PPD curve has a fixed minimum of 5% at PMV = 0. That minimum is built into the model form. This is why PPD should be read as a dissatisfied-fraction surrogate under the PMV framework, not as an empirical accuracy score for the PMV predictor.</p>
+      <ul>
+        <li>PMV = 0 does not imply 0% dissatisfaction.</li>
+        <li>PPD grows symmetrically with |PMV|.</li>
+        <li>The comfort rim at <span class="mono">|PMV| ≤ 0.5</span> still spans roughly 5% to 10% dissatisfied.</li>
+        <li>PPD adds acceptability curvature, but it still does not add pathway or physiological meaning.</li>
+      </ul>
+    </div>
+    <div>
+      <img src="figures/ppd_curve.png" alt="PPD curve">
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div>
+      <img src="figures/zero_pmv_manifold.png" alt="Zero PMV manifold">
+    </div>
+    <div class="card">
+      <h2>Zero-PMV Manifolds</h2>
+      <p>The contour panels show that PMV = 0 is not a single state. It is a manifold in environmental input space. Different combinations of air temperature, radiant temperature, humidity, and air speed can all settle at PMV = 0 for the same occupant.</p>
+      <ul>
+        <li>Raising air speed shifts the neutral contour.</li>
+        <li>Humidity changes matter, but less than Ta and Tr in this office range.</li>
+        <li>Ta and Tr trade against each other along the PMV = 0 contour, which is why air and radiant systems can both hit neutrality through different pathways.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>One-PMV-Step Air Moves Across TSV Labels</h2>
+    <div class="card">
+      <p>This layer answers the more precise question behind TSV labels: if you ask the model to move exactly one PMV label toward neutrality, such as <span class="mono">-3→-2</span> or <span class="mono">-1→0</span>, is the required change the same? The answer splits in two. For a fixed profile, the required change in <span class="mono">H-L</span> is nearly identical by construction because PMV is linear in thermal load. But the required <span class="mono">ΔTa</span> is <strong>not</strong> identical, because the mapping from air temperature to thermal load depends on the starting environmental family and pathway balance.</p>
+      <table>
+        <thead><tr><th>Profile</th><th>Avg |ΔTa| for one PMV step (°C)</th><th>Avg |Δ(H-L)| (W/m²)</th><th>Avg |Δ(H-L)| (W/person)</th><th>Avg ΔPPD (points)</th><th>Avg |ΔQ_conv| (W/person)</th><th>Avg |ΔQ_rad| (W/person)</th></tr></thead>
+        <tbody><tr><td>Smaller female, lower-met</td><td>3.53</td><td>11.80</td><td>18.4</td><td>31.4</td><td>20.6</td><td>5.3</td></tr>
+<tr><td>Reference office</td><td>4.14</td><td>13.50</td><td>24.4</td><td>31.4</td><td>28.1</td><td>7.7</td></tr>
+<tr><td>Larger male, formal</td><td>5.28</td><td>15.30</td><td>32.1</td><td>31.4</td><td>40.4</td><td>14.0</td></tr>
+<tr><td>Older layered occupant</td><td>4.15</td><td>11.80</td><td>20.1</td><td>31.4</td><td>25.2</td><td>8.8</td></tr></tbody>
+      </table>
+      <p class="note">This is where PMV and PPD split cleanly. The model says one PMV step is a constant thermal-load step within a profile, but the same one-step transition does not carry constant air-temperature, pathway, or dissatisfaction meaning.</p>
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div>
+      <img src="figures/pmv_step_required_air_shift.png" alt="Required air shift per PMV step">
+    </div>
+    <div class="card">
+      <h2>Required ΔTa Depends on the Starting State</h2>
+      <p>Each cell shows the air-temperature move needed to go one PMV label closer to zero under a given environmental family. Positive values mean warming; negative values mean cooling. This is where the nonlinearity lives.</p>
+      <ul>
+        <li><span class="mono">-3→-2</span> and <span class="mono">-1→0</span> are not the same required <span class="mono">ΔTa</span>.</li>
+        <li>The required air move also changes under humid, moving-air, and radiant-biased conditions.</li>
+        <li>So equal PMV steps do not imply equal control displacement.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div class="card">
+      <h2>But the Thermal-Load Step Stays Nearly Constant</h2>
+      <p>These heatmaps show the signed change in total occupant thermal load in <span class="mono">W/person</span> for the same one-step PMV move. Within each profile the rows are almost uniform, because a one-unit PMV step corresponds to a fixed load step set by that profile's PMV factor. What changes with profile is the <strong>size</strong> of that fixed load step, and what changes with state is how the air system has to redistribute pathway watts to achieve it.</p>
+      <ul>
+        <li>Lower-met profiles need a smaller load correction per PMV unit.</li>
+        <li>Larger bodies show larger <span class="mono">W/person</span> for the same per-area PMV step.</li>
+        <li>The interesting variation is therefore in <span class="mono">ΔTa</span> and pathway shares, not in the PMV-to-load algebra itself.</li>
+      </ul>
+    </div>
+    <div>
+      <img src="figures/pmv_step_load_change.png" alt="Load change per PMV step">
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div>
+      <img src="figures/pmv_step_ppd_change.png" alt="PPD change per PMV step">
+    </div>
+    <div class="card">
+      <h2>PPD Gives Unequal Meaning to Equal PMV Steps</h2>
+      <p>The same one-label PMV transition does not produce the same change in predicted dissatisfaction. That is the useful thing PPD adds near the comfort rim. A step from <span class="mono">-2→-1</span> or <span class="mono">+2→+1</span> can remove much more dissatisfaction than a step from <span class="mono">-1→0</span> or <span class="mono">+1→0</span>, even though all are one-unit PMV moves.</p>
+      <ul>
+        <li>PMV steps are equal in thermal-load space for a fixed profile.</li>
+        <li>PPD changes are not equal across the same PMV steps.</li>
+        <li>PPD therefore restores operational comfort meaning near neutrality, but still does not restore pathway or physiology.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Air vs Radiant Recovery Under the Same PMV Target</h2>
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Scenario</th>
+          <th colspan="4">All-Air</th>
+          <th colspan="4">Radiant</th>
+          <th rowspan="2">Lower exergy winner</th>
+        </tr>
+        <tr>
+          <th>Δ control</th><th>Exergy</th><th>|ΔPMV| / 100W</th><th>Dominant pathway</th>
+          <th>Δ control</th><th>Exergy</th><th>|ΔPMV| / 100W</th><th>Dominant pathway</th>
+        </tr>
+      </thead>
+      <tbody><tr><td>Severe cold bulk</td><td>13.2 C</td><td>265.6 W</td><td>1.128</td><td>convection</td><td>15.8 C</td><td>198.0 W</td><td>1.521</td><td>radiation</td><td>Radiant (Tr only)</td></tr>
+<tr><td>Cold radiant sink</td><td>10.9 C</td><td>219.3 W</td><td>1.102</td><td>convection</td><td>12.5 C</td><td>156.7 W</td><td>1.535</td><td>radiation</td><td>Radiant (Tr only)</td></tr>
+<tr><td>Cold high-airflow draft</td><td>11.0 C</td><td>221.3 W</td><td>1.917</td><td>convection</td><td>—</td><td>—</td><td>—</td><td>—</td><td>All-air (Ta only)</td></tr>
+<tr><td>Severe hot bulk</td><td>7.1 C</td><td>142.9 W</td><td>1.106</td><td>convection</td><td>7.7 C</td><td>79.0 W</td><td>2.012</td><td>radiation</td><td>Radiant (Tr only)</td></tr>
+<tr><td>Hot radiant gain</td><td>6.5 C</td><td>130.8 W</td><td>1.195</td><td>convection</td><td>7.3 C</td><td>74.9 W</td><td>2.076</td><td>radiation</td><td>Radiant (Tr only)</td></tr>
+<tr><td>Hot humid still air</td><td>6.4 C</td><td>128.8 W</td><td>1.272</td><td>convection</td><td>7.6 C</td><td>77.9 W</td><td>2.097</td><td>radiation</td><td>Radiant (Tr only)</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="grid section">
+    <div>
+      <img src="figures/air_vs_radiant_effectiveness.png" alt="Air versus radiant effectiveness">
+    </div>
+    <div class="card">
+      <h2>What Changes When System Work Is Added</h2>
+      <p>This comparison answers the practical question directly. If you compare air and radiant recovery only by PMV target, both can often hit the same recovered PMV. If you compare them by <strong>system exergy</strong>, the ranking changes.</p>
+      <ul>
+        <li>Per occupant thermal-load logic, both levers are just different routes to changing <span class="mono">H - L</span>.</li>
+        <li>Per estimated system exergy, radiant recovery is usually more efficient in the radiative scenarios and in most of the hot/cold bulk scenarios here.</li>
+        <li>So the statement “radiant is more effective” is only meaningful once you specify the denominator: per PMV target, per body-load watt, or per system exergy watt.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Profile-Sensitive 1°C Response</h2>
+    <div class="card">
+      <p>This layer asks the next question directly: for different occupant archetypes, how much does a <span class="mono">directed 1°C</span> change in <span class="mono">Ta</span> or <span class="mono">Tr</span> move PMV toward neutrality, and which pathway watts actually move? The four profiles below change not only <span class="mono">met</span> and <span class="mono">clo</span>, but also body size. In the standard PMV formulation, body size does <strong>not</strong> directly change PMV once everything is normalized by body area, but it <strong>does</strong> change the total wattage when those pathway terms are converted back into <span class="mono">W/person</span>. Age and sex are therefore only entering here through assumed body size, clothing, and metabolic-rate choices; they are not explicit terms in Fanger's PMV equation.</p>
+      <table>
+        <thead><tr><th>Profile</th><th>Age</th><th>Sex</th><th>Height (cm)</th><th>Weight (kg)</th><th>BSA (m²)</th><th>Clo</th><th>Met</th><th>Metabolic rate (W/person)</th></tr></thead>
+        <tbody><tr><td>Smaller female, lower-met</td><td>30</td><td>female</td><td>160</td><td>55</td><td>1.56</td><td>0.45</td><td>0.8</td><td>72.7</td></tr>
+<tr><td>Reference office</td><td>40</td><td>male</td><td>170</td><td>70</td><td>1.81</td><td>0.50</td><td>0.9</td><td>94.7</td></tr>
+<tr><td>Larger male, formal</td><td>35</td><td>male</td><td>182</td><td>88</td><td>2.10</td><td>0.70</td><td>1.0</td><td>121.9</td></tr>
+<tr><td>Older layered occupant</td><td>70</td><td>female</td><td>165</td><td>64</td><td>1.70</td><td>0.70</td><td>0.8</td><td>79.3</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div>
+      <img src="figures/profile_response_heatmaps.png" alt="Profile response heatmaps">
+    </div>
+    <div class="card">
+      <h2>Moving PMV Toward Zero</h2>
+      <p>The heatmaps at left show the reduction in <span class="mono">|PMV|</span> from a <strong>directed</strong> 1°C change: colder-than-neutral baselines get a warming move; hotter-than-neutral baselines get a cooling move. The lower row translates the same perturbation into total occupant thermal-load watts.</p>
+      <table>
+        <thead><tr><th>Profile</th><th>Avg |PMV| improvement, air</th><th>Avg |PMV| improvement, radiant</th><th>Avg ΔPPD, air</th><th>Avg ΔPPD, radiant</th><th>Avg |ΔQ_conv|, air (W/person)</th><th>Avg |ΔQ_rad|, radiant (W/person)</th></tr></thead>
+        <tbody><tr><td>Smaller female, lower-met</td><td>0.30</td><td>0.23</td><td>7.2</td><td>6.9</td><td>6.4</td><td>5.8</td></tr>
+<tr><td>Reference office</td><td>0.26</td><td>0.19</td><td>5.7</td><td>5.3</td><td>7.3</td><td>6.6</td></tr>
+<tr><td>Larger male, formal</td><td>0.20</td><td>0.15</td><td>7.0</td><td>5.4</td><td>8.0</td><td>7.4</td></tr>
+<tr><td>Older layered occupant</td><td>0.25</td><td>0.19</td><td>6.0</td><td>5.5</td><td>6.5</td><td>6.0</td></tr></tbody>
+      </table>
+      <p class="note">This is the point your original question was pushing toward: the same <span class="mono">1°C</span> control move does not have the same PMV or PPD leverage across profiles and discomfort origins, even before pathway watts are compared.</p>
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div class="card">
+      <h2>Total Thermal-Load Motion Still Matters</h2>
+      <p>The PPD view is useful because it restores acceptability meaning, but it should not erase the body-load interpretation. These panels keep the total thermal-load movement visible in <span class="mono">W/person</span>. In the current cases, directed air shifts usually move more total load than directed radiant shifts for the same nominal <span class="mono">1°C</span> input, because the air move perturbs multiple terms at once.</p>
+    </div>
+    <div>
+      <img src="figures/profile_load_heatmaps.png" alt="Profile load heatmaps">
+    </div>
+  </div>
+
+  <div class="grid section">
+    <div class="card">
+      <h2>Which Watts Actually Move</h2>
+      <p>The pathway heatmaps separate <span class="mono">ΔQ_conv</span> from <span class="mono">ΔQ_rad</span> in <span class="mono">W/person</span>. They make the mechanism visible instead of leaving it hidden behind a single PMV scalar.</p>
+      <ul>
+        <li>A directed <span class="mono">Ta</span> change primarily moves convective watts, with only secondary radiative spillover.</li>
+        <li>A directed <span class="mono">Tr</span> change primarily moves radiative watts, while still nudging convection through the changed surface-air balance.</li>
+        <li>Larger bodies do not automatically get different PMV for the same per-area load, but they do show larger total watt shifts in <span class="mono">W/person</span>.</li>
+      </ul>
+    </div>
+    <div>
+      <img src="figures/profile_pathway_heatmaps.png" alt="Profile pathway heatmaps">
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Working Interpretation</h2>
+    <div class="card">
+      <ul>
+        <li>PMV is not a free-floating empirical vote regressor in this implementation. It is a thermal-load expression wrapped in Fanger's empirical scaling factor.</li>
+        <li>PPD is not prediction confidence. It is a dissatisfaction mapping from PMV, with a built-in floor of 5%.</li>
+        <li>PPD is useful for interpreting the comfort rim, but it is still not an edge-physiology model.</li>
+        <li>PMV = 0 means the modeled thermal load has been balanced for the chosen occupant and conditions, not that the environment is unique or uniformly comfortable for everyone.</li>
+        <li>Pathway decomposition is still useful because it explains how the environment reaches that load balance.</li>
+        <li>Radiant vs air is therefore a system question layered on top of the PMV model: per body-load watt the comparison is similar, but per system exergy watt the levers can diverge sharply.</li>
+        <li>Changing demographics in the current model works mostly by changing <span class="mono">met</span>, <span class="mono">clo</span>, and body area. That changes both the slope from thermal load to PMV and the total pathway watts required to move a person back toward neutrality.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
