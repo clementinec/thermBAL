@@ -78,11 +78,12 @@ SECTIONS = [
 
     (1, "1", "Introduction", [
 
-        "Architectural design is always directed toward occupants, yet early environmental "
-        "reasoning often treats those occupants as generic. Standard workflows reduce a "
-        "building to conditioned zones and report average temperatures and aggregate loads. "
-        "The embedded assumption is that if the thermostat is set appropriately, the zone is "
-        "comfortable and the people inside it are effectively interchangeable. Figure 1 "
+        "Architecture has always been practiced under uncertainty: who will occupy a room, "
+        "how they will dress, where they will sit, and how a plan will be inhabited over "
+        "time. Yet early building-performance workflows often replace that uncertainty with "
+        "singular representatives: a default occupant, a nominal setpoint, a typical room, "
+        "or a zone average. This tyranny of the default is computationally convenient, but "
+        "it suppresses the variability that architecture must ultimately confront. Figure 1 "
         "distills the premise: the same nominal room can produce meaningfully different "
         "discomfort outcomes once occupant physiology is made explicit.",
 
@@ -185,7 +186,9 @@ SECTIONS = [
         "sets of cells, bounded by walls and connected by doors and openings. Environmental "
         "conditions are assigned per room from design specifications rather than simulated. "
         "Occupant agents are individually placed persons characterized by demographics, "
-        "clothing insulation, activity level, and preferences.",
+        "clothing insulation, activity level, and preferences. The intent is not to eliminate "
+        "occupant uncertainty, but to restore it as an explicit design variable that can be "
+        "propagated through a shared spatial proposal.",
 
         "The framework is structured to accept any floor plan that can be segmented into "
         "rooms with assigned environmental conditions. Geometry enters through an assisted "
@@ -227,10 +230,12 @@ SECTIONS = [
         "evaporative loss through skin diffusion and regulatory sweating, and respiratory "
         "heat loss through convection and evaporation in the lungs. These four components\u2014"
         "reported in watts per square meter of body surface area\u2014are preserved in the "
-        "agent snapshot alongside the aggregate PMV and PPD values. It is this decomposition "
-        "that enables the spatial analysis presented in the results: by examining which heat-loss "
-        "channel varies across rooms or across occupant profiles, the framework reveals the "
-        "physical mechanism driving comfort heterogeneity, not merely its summary index.",
+        "agent snapshot alongside the aggregate PMV and PPD values. PMV and PPD are therefore "
+        "treated as bounded steady-state coordinates for comparison, not as universal comfort "
+        "truths. It is the decomposition that enables the spatial analysis presented in the "
+        "results: by examining which heat-loss channel varies across rooms or across occupant "
+        "profiles, the framework reveals the physical mechanism driving comfort heterogeneity, "
+        "not merely its summary index.",
     ]),
 
     (2, "3.3", "Case Study Design", [
@@ -259,7 +264,9 @@ SECTIONS = [
         "mobile cohort, and a higher-BMI cohort. Within each cohort, individual agent demographics "
         "are generated from a seeded random process producing variation in age, height, weight, "
         "and sex assignment across the 21 occupied rooms. Clothing insulation and activity level "
-        "are assigned by room function and modified by cohort definition.",
+        "are assigned by room function and modified by cohort definition. These cohorts are "
+        "not predictions of future inhabitants. They are design stress tests against plausible "
+        "body, clothing, and activity variation under otherwise identical spatial assumptions.",
 
         "The climate sweep covers five air temperatures (20.0, 22.0, 23.5, 25.0, 28.0\u00b0C) "
         "and four relative humidity levels (35, 55, 75, 80%), producing 20 environmental "
@@ -356,7 +363,10 @@ SECTIONS = [
         "clothing and reduced activity each displace the heat-transfer balance by roughly "
         "5 W/m\u00b2. Design decisions about "
         "spatial organization carry thermal consequences of the same order as the occupant "
-        "variables designers typically consider uncontrollable. The plan is not thermally "
+        "variables designers typically consider uncontrollable. This is where the default "
+        "occupant becomes actively misleading: it makes an uncertain population appear as a "
+        "single stable body, even though spatial and physiological variation are operating at "
+        "similar scales. The plan is not thermally "
         "neutral. It is an active participant in the comfort equation.",
     ]),
 
@@ -442,7 +452,9 @@ SECTIONS = [
 
         "What the framework ultimately offers is not another optimization target but a new kind "
         "of design feedback: the ability to see, before a building is built, which occupants a "
-        "given spatial configuration advantages, which it penalizes, and why. The holistic data "
+        "given spatial configuration advantages, which it penalizes, and why. In that sense, "
+        "the contribution is a way to design with uncertainty rather than average it away. "
+        "The holistic data "
         "model already carries lighting, acoustic, and preference fields alongside the thermal "
         "channel exercised here, positioning the framework for extension to multi-channel "
         "environmental quality assessment at the same spatial resolution.",
